@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from flask import Blueprint
+
     from two_brain_audit.engine import AuditEngine
 
 
@@ -30,6 +31,7 @@ def create_blueprint(engine: AuditEngine, url_prefix: str = "/audit") -> Bluepri
         GET  /health          — quick health check for CI (JSON)
     """
     from flask import Blueprint, jsonify, request
+
     from two_brain_audit.dashboard.ui import render_dashboard
 
     bp = Blueprint("two_brain_audit", __name__, url_prefix=url_prefix)

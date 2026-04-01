@@ -1,6 +1,7 @@
 """Tests for the audit database layer."""
 
 import pytest
+
 from two_brain_audit.db import AuditDB
 
 

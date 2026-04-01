@@ -1,7 +1,9 @@
 """Tests for the JSON sidecar."""
 
 import json
+
 import pytest
+
 from two_brain_audit.sidecar import Sidecar
 
 

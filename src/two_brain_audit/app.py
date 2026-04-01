@@ -45,6 +45,7 @@ def launch(
         return
 
     from flask import Flask
+
     from two_brain_audit.dashboard import create_blueprint
 
     app = Flask("two_brain_audit")
@@ -63,7 +64,7 @@ def launch(
     _wait_for_server(url, timeout=10)
 
     # Open native window — prefer Qt backend on Windows (pythonnet often broken on 3.13+)
-    window = webview.create_window(
+    webview.create_window(
         title,
         url,
         width=width,
@@ -92,7 +93,7 @@ def _wait_for_server(url: str, timeout: int = 10) -> None:
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
-            urllib.request.urlopen(url, timeout=2)
+            urllib.request.urlopen(url, timeout=2)  # noqa: S310
             return
         except Exception:
             time.sleep(0.2)
@@ -104,6 +105,7 @@ def _fallback_browser(engine: AuditEngine, port: int) -> None:
     import webbrowser
 
     from flask import Flask
+
     from two_brain_audit.dashboard import create_blueprint
 
     app = Flask("two_brain_audit")

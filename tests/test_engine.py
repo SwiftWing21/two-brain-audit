@@ -1,9 +1,8 @@
 """Tests for the core AuditEngine."""
 
-import os
-import tempfile
 
 import pytest
+
 from two_brain_audit import AuditEngine, Dimension, Tier
 
 

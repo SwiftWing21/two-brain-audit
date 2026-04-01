@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import argparse
 import sys
-from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from two_brain_audit.engine import AuditEngine
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -21,7 +24,10 @@ def main(argv: list[str] | None = None) -> int:
 
     # ── register ─────────────────────────────────────────────────────
     p_reg = sub.add_parser("register", help="Register a preset dimension set")
-    p_reg.add_argument("--preset", required=True, choices=["python", "api", "database", "infrastructure", "ml_pipeline"])
+    p_reg.add_argument(
+        "--preset", required=True,
+        choices=["python", "api", "database", "infrastructure", "ml_pipeline"],
+    )
     p_reg.add_argument("--db", default="audit.db")
     p_reg.add_argument("--baseline", default="audit_baseline.json")
 
@@ -167,7 +173,7 @@ def _cmd_health(engine: AuditEngine, args: argparse.Namespace) -> int:
 
 
 def _cmd_export(engine: AuditEngine, args: argparse.Namespace) -> int:
-    from two_brain_audit.exporters import export_json, export_csv, export_markdown
+    from two_brain_audit.exporters import export_csv, export_json, export_markdown
 
     exporters = {"json": export_json, "csv": export_csv, "markdown": export_markdown}
     output = exporters[args.format](engine, path=args.output)
@@ -186,13 +192,14 @@ def _cmd_dashboard(engine: AuditEngine, args: argparse.Namespace) -> int:
 
     try:
         from flask import Flask
+
         from two_brain_audit.dashboard import create_blueprint
     except ImportError:
         print("Dashboard requires Flask: pip install two-brain-audit[dashboard]", file=sys.stderr)
         return 1
 
-    import webbrowser
     import threading
+    import webbrowser
 
     app = Flask("two_brain_audit")
     app.register_blueprint(create_blueprint(engine))

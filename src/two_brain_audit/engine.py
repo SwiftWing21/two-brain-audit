@@ -5,7 +5,10 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 from two_brain_audit.db import AuditDB
 from two_brain_audit.grades import grade_to_score, is_failing, score_to_grade
@@ -169,8 +172,6 @@ class AuditEngine:
         dim = self._dimensions.get(name)
         if dim is None:
             return None
-        # Temporarily run at weekly tier to bypass tier gating
-        results = []
         baseline = self.sidecar.load()
         ts = time.strftime("%Y-%m-%dT%H:%M:%S")
 
