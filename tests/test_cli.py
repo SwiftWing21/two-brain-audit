@@ -1,0 +1,46 @@
+"""Tests for the CLI."""
+
+from two_brain_audit.cli import main
+
+
+class TestCLI:
+    def test_no_args_returns_zero(self):
+        assert main([]) == 0
+
+    def test_help_flag(self):
+        try:
+            main(["--help"])
+        except SystemExit as e:
+            assert e.code == 0
+
+    def test_init_creates_files(self, tmp_path):
+        db = str(tmp_path / "test.db")
+        baseline = str(tmp_path / "test_baseline.json")
+        result = main(["init", "--db", db, "--baseline", baseline])
+        assert result == 0
+        assert (tmp_path / "test.db").exists()
+        assert (tmp_path / "test_baseline.json").exists()
+
+    def test_status_empty(self, tmp_path):
+        db = str(tmp_path / "test.db")
+        baseline = str(tmp_path / "test_baseline.json")
+        main(["init", "--db", db, "--baseline", baseline])
+        result = main(["status", "--db", db, "--baseline", baseline])
+        assert result == 0
+
+    def test_health_empty(self, tmp_path):
+        db = str(tmp_path / "test.db")
+        baseline = str(tmp_path / "test_baseline.json")
+        main(["init", "--db", db, "--baseline", baseline])
+        result = main(["health", "--db", db, "--baseline", baseline])
+        # ok=True when no scores (no failing dimensions)
+        assert result == 0
+
+    def test_export_json(self, tmp_path):
+        db = str(tmp_path / "test.db")
+        baseline = str(tmp_path / "test_baseline.json")
+        out = str(tmp_path / "report.json")
+        main(["init", "--db", db, "--baseline", baseline])
+        result = main(["export", "json", "-o", out, "--db", db, "--baseline", baseline])
+        assert result == 0
+        assert (tmp_path / "report.json").exists()
