@@ -29,7 +29,10 @@ coverage.xml
 
 # Runtime artifacts
 *.db
+*.db-shm
+*.db-wal
 audit_baseline.json
+demo_baseline.json
 
 # OS
 .DS_Store

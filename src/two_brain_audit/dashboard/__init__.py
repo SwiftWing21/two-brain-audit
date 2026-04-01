@@ -41,7 +41,17 @@ def create_blueprint(engine: AuditEngine, url_prefix: str = "/audit") -> Bluepri
     @bp.route("/scores")
     def scores():
         results = engine.latest_scores()
-        return jsonify([_result_dict(r) for r in results])
+        baseline = engine.sidecar.load()
+        dims = baseline.get("dimensions", {})
+        out = []
+        for r in results:
+            d = _result_dict(r)
+            meta = dims.get(r.name, {})
+            d["manual_source"] = meta.get("source")
+            d["manual_updated"] = meta.get("updated")
+            d["manual_notes"] = meta.get("notes")
+            out.append(d)
+        return jsonify(out)
 
     @bp.route("/scores/history")
     def scores_history():

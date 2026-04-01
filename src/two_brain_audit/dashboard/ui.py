@@ -251,6 +251,45 @@ header h1 span { color: var(--accent); }
 .status-badge.fail { background: rgba(248,113,113,0.12); color: var(--red); }
 .status-badge.ack { background: rgba(100,116,139,0.15); color: var(--muted); }
 
+/* ── Manual Grade Detail ───────────────────────────────────────────── */
+.manual-cell { position: relative; }
+.manual-grade { font-weight: 600; }
+.manual-unreviewed {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: italic;
+}
+.manual-meta {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.3;
+  margin-top: 2px;
+}
+.manual-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.manual-source.human { background: rgba(129,140,248,0.12); color: var(--accent); }
+.manual-source.llm { background: rgba(251,191,36,0.12); color: var(--yellow); }
+.manual-source.feedback { background: rgba(52,211,153,0.12); color: var(--green); }
+.manual-notes {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.manual-notes:hover {
+  white-space: normal;
+  overflow: visible;
+}
+
 .confidence-bar {
   display: inline-block;
   width: 50px;
@@ -447,6 +486,10 @@ footer a { color: var(--accent); text-decoration: none; }
       <div class="stat-label">Failing</div>
     </div>
     <div class="stat-card">
+      <div class="stat-value" id="stat-reviewed" style="color:var(--accent)">--</div>
+      <div class="stat-label">Reviewed</div>
+    </div>
+    <div class="stat-card">
       <div class="stat-value" id="stat-feedback" style="color:var(--accent)">--</div>
       <div class="stat-label">Feedback</div>
     </div>
@@ -461,14 +504,15 @@ footer a { color: var(--accent); text-decoration: none; }
       <th>Dimension</th>
       <th>Auto Score</th>
       <th>Grade</th>
-      <th>Manual</th>
+      <th>Manual Review</th>
       <th>Status</th>
       <th>Confidence</th>
+      <th>Last Scan</th>
       <th></th>
     </tr>
   </thead>
   <tbody id="scores-body">
-    <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">Loading...</td></tr>
+    <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px;">Loading...</td></tr>
   </tbody>
 </table>
 
@@ -576,8 +620,29 @@ function buildScoreRow(s) {
   // Grade
   tr.appendChild(el('td', {style:{fontWeight:'700', color:color}}, grade));
 
-  // Manual
-  tr.appendChild(el('td', null, manual));
+  // Manual review cell — shows grade + source + date + notes
+  var manualTd = el('td', {className:'manual-cell'});
+  if (s.manual_grade) {
+    manualTd.appendChild(el('div', {className:'manual-grade', style:{color:color}}, s.manual_grade));
+    var metaDiv = el('div', {className:'manual-meta'});
+    if (s.manual_source) {
+      var srcClass = 'manual-source';
+      if (s.manual_source === 'human') srcClass += ' human';
+      else if (s.manual_source === 'oauth_review' || s.manual_source === 'llm_review') srcClass += ' llm';
+      else if (s.manual_source === 'user_feedback') srcClass += ' feedback';
+      metaDiv.appendChild(el('span', {className:srcClass}, s.manual_source));
+    }
+    if (s.manual_updated) {
+      metaDiv.appendChild(document.createTextNode(' ' + s.manual_updated));
+    }
+    manualTd.appendChild(metaDiv);
+    if (s.manual_notes) {
+      manualTd.appendChild(el('div', {className:'manual-notes', title:s.manual_notes}, s.manual_notes));
+    }
+  } else {
+    manualTd.appendChild(el('span', {className:'manual-unreviewed'}, 'not reviewed'));
+  }
+  tr.appendChild(manualTd);
 
   // Status badge
   tr.appendChild(el('td', null, [el('span', {className:'status-badge '+status}, statusLabel)]));
@@ -589,6 +654,15 @@ function buildScoreRow(s) {
   confTd.appendChild(confBar);
   confTd.appendChild(document.createTextNode(confPct + '%'));
   tr.appendChild(confTd);
+
+  // Last scan timestamp
+  var scanTd = el('td', {style:{fontSize:'11px', color:'var(--muted)', fontFamily:'var(--mono)'}});
+  if (s.timestamp) {
+    scanTd.textContent = s.timestamp.replace('T', ' ').substring(0, 16);
+  } else {
+    scanTd.textContent = '\u2014';
+  }
+  tr.appendChild(scanTd);
 
   // Acknowledge button (only for diverged)
   const ackTd = el('td');
@@ -627,10 +701,12 @@ async function refresh() {
     const passing = scores.filter(function(s){return s.auto_score > 0.5 && !s.divergent;}).length;
     const failing = scores.filter(function(s){return s.auto_score <= 0.5;}).length;
     const divs = scores.filter(function(s){return s.divergent && !s.acknowledged;}).length;
+    var reviewed = scores.filter(function(s){return s.manual_grade;}).length;
     document.getElementById('stat-dimensions').textContent = String(scores.length);
     document.getElementById('stat-passing').textContent = String(passing);
     document.getElementById('stat-divergences').textContent = String(divs);
     document.getElementById('stat-failing').textContent = String(failing);
+    document.getElementById('stat-reviewed').textContent = reviewed + '/' + scores.length;
     document.getElementById('stat-feedback').textContent = String(fb.count || 0);
 
     // Score table — safe DOM construction

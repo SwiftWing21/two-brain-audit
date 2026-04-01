@@ -53,6 +53,7 @@ def main(argv: list[str] | None = None) -> int:
     p_dash = sub.add_parser("dashboard", help="Start the web dashboard")
     p_dash.add_argument("--port", type=int, default=8484)
     p_dash.add_argument("--host", default="127.0.0.1")
+    p_dash.add_argument("--native", action="store_true", help="Open in a native PyWebView window instead of browser")
     p_dash.add_argument("--db", default="audit.db")
     p_dash.add_argument("--baseline", default="audit_baseline.json")
 
@@ -178,6 +179,11 @@ def _cmd_export(engine: AuditEngine, args: argparse.Namespace) -> int:
 
 
 def _cmd_dashboard(engine: AuditEngine, args: argparse.Namespace) -> int:
+    if args.native:
+        from two_brain_audit.app import launch
+        launch(engine, port=args.port)
+        return 0
+
     try:
         from flask import Flask
         from two_brain_audit.dashboard import create_blueprint
@@ -185,10 +191,15 @@ def _cmd_dashboard(engine: AuditEngine, args: argparse.Namespace) -> int:
         print("Dashboard requires Flask: pip install two-brain-audit[dashboard]", file=sys.stderr)
         return 1
 
+    import webbrowser
+    import threading
+
     app = Flask("two_brain_audit")
     app.register_blueprint(create_blueprint(engine))
 
-    print(f"Starting dashboard on http://{args.host}:{args.port}/audit/health")
+    url = f"http://{args.host}:{args.port}/audit/"
+    print(f"Dashboard: {url}")
+    threading.Timer(1.0, lambda: webbrowser.open(url)).start()
     app.run(host=args.host, port=args.port, debug=False)
     return 0
 
