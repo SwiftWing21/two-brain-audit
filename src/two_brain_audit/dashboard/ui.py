@@ -76,6 +76,17 @@ header h1 {
 
 header h1 span { color: var(--accent); }
 
+.meta-path {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--muted);
+  margin-top: 2px;
+  max-width: 500px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .header-right {
   display: flex;
   align-items: center;
@@ -442,7 +453,10 @@ footer a { color: var(--accent); text-decoration: none; }
 
 <!-- ── Header ──────────────────────────────────────────────────────── -->
 <header>
-  <h1><span>Two-Brain</span> Audit</h1>
+  <div>
+    <h1><span>Two-Brain</span> Audit</h1>
+    <div id="meta-path" class="meta-path"></div>
+  </div>
   <div class="header-right">
     <div id="health-badge" class="health-badge ok">
       <div class="dot"></div>
@@ -801,6 +815,15 @@ function toast(msg, type) {
 /* ── Init ──────────────────────────────────────────────────────────── */
 refresh();
 setInterval(refresh, 30000);
+
+// Load meta (db/baseline paths) once
+api('/meta').then(function(meta) {
+  var pathEl = document.getElementById('meta-path');
+  if (meta.db_path) {
+    pathEl.textContent = meta.db_path;
+    pathEl.title = 'DB: ' + meta.db_path + '\\nBaseline: ' + meta.baseline_path;
+  }
+}).catch(function(){});
 </script>
 </body>
 </html>"""

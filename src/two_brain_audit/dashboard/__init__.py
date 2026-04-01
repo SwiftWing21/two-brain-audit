@@ -99,6 +99,14 @@ def create_blueprint(engine: AuditEngine, url_prefix: str = "/audit") -> Bluepri
     def health():
         return jsonify(engine.health_check())
 
+    @bp.route("/meta")
+    def meta():
+        import os
+        return jsonify({
+            "db_path": os.path.abspath(engine.db_path),
+            "baseline_path": os.path.abspath(engine.baseline_path),
+        })
+
     return bp
 
 
