@@ -1,6 +1,8 @@
 """Optional Flask dashboard blueprint for the audit system.
 
 Requires: pip install two-brain-audit[dashboard]
+
+Serves both the JSON API and a single-page HTML dashboard at the root.
 """
 
 from __future__ import annotations
@@ -16,19 +18,25 @@ def create_blueprint(engine: AuditEngine, url_prefix: str = "/audit") -> Bluepri
     """Create a Flask blueprint wired to the given AuditEngine.
 
     Endpoints:
-        GET  /scores          — latest score per dimension
-        GET  /scores/history  — time series (default 30 days)
-        GET  /divergences     — active unacknowledged divergences
+        GET  /                — HTML dashboard UI
+        GET  /scores          — latest score per dimension (JSON)
+        GET  /scores/history  — time series (JSON)
+        GET  /divergences     — active unacknowledged divergences (JSON)
         POST /acknowledge/<dim> — dismiss a divergence
         POST /trigger/<tier>  — run an on-demand audit tier
-        GET  /baseline        — current manual grades from sidecar
+        GET  /baseline        — current manual grades from sidecar (JSON)
         POST /feedback        — submit user feedback
-        GET  /feedback/summary — aggregated feedback stats
-        GET  /health          — quick health check for CI
+        GET  /feedback/summary — aggregated feedback stats (JSON)
+        GET  /health          — quick health check for CI (JSON)
     """
     from flask import Blueprint, jsonify, request
+    from two_brain_audit.dashboard.ui import render_dashboard
 
     bp = Blueprint("two_brain_audit", __name__, url_prefix=url_prefix)
+
+    @bp.route("/")
+    def index():
+        return render_dashboard()
 
     @bp.route("/scores")
     def scores():
