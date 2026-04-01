@@ -335,6 +335,7 @@ The sidecar is the only file you edit by hand. Everything else is managed by the
 
 ## Next Steps
 
+- Read [STANDARDS.md](STANDARDS.md) for what we measure and why (OWASP, SRE, DORA, etc.)
 - Read [ARCHITECTURE.md](ARCHITECTURE.md) for design decisions
 - Check `examples/biged/` for a 12-dimension reference implementation
 - Browse `presets/` to see how dimensions are defined

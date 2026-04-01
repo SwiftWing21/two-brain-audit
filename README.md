@@ -118,6 +118,7 @@ app.register_blueprint(create_blueprint(engine), url_prefix="/audit")
 ## Docs
 
 - **[Quickstart Guide](docs/QUICKSTART.md)** — step-by-step with examples
+- **[Standards Reference](docs/STANDARDS.md)** — what we measure and why (OWASP, SRE, DORA, Clean Code, etc.)
 - **[Architecture](docs/ARCHITECTURE.md)** — design decisions and data flow
 - **[examples/biged/](examples/biged/)** — 12-dimension reference implementation
 
