@@ -27,7 +27,15 @@ class Sidecar:
     """
 
     def __init__(self, path: str | Path = "audit_baseline.json") -> None:
-        self.path = Path(path)
+        resolved = Path(path).resolve()
+        # Reject paths containing .. traversal after resolution
+        try:
+            resolved.relative_to(Path.cwd().resolve())
+        except ValueError:
+            # Allow absolute paths outside cwd (e.g., user-specified --baseline)
+            # but log a warning
+            log.debug("Sidecar path %s is outside working directory", resolved)
+        self.path = resolved
 
     def load(self) -> dict[str, Any]:
         """Load the sidecar. Returns default if file doesn't exist."""

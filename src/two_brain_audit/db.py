@@ -70,12 +70,10 @@ class AuditDB:
         conn = self._get_conn()
         conn.executescript(SCHEMA)
         # Track schema version
-        row = conn.execute(
-            "SELECT version FROM schema_version ORDER BY version DESC LIMIT 1"
-        ).fetchone()
-        if row is None:
-            conn.execute("INSERT INTO schema_version (version) VALUES (?)", (CURRENT_VERSION,))
-            conn.commit()
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version) VALUES (?)", (CURRENT_VERSION,)
+        )
+        conn.commit()
 
     # ── Scores ───────────────────────────────────────────────────────
 

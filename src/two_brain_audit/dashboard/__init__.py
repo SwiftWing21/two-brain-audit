@@ -58,7 +58,10 @@ def create_blueprint(engine: AuditEngine, url_prefix: str = "/audit") -> Bluepri
     @bp.route("/scores/history")
     def scores_history():
         dim = request.args.get("dimension")
-        days = int(request.args.get("days", 30))
+        try:
+            days = max(1, min(365, int(request.args.get("days", 30))))
+        except (ValueError, TypeError):
+            days = 30
         return jsonify(engine.db.score_history(dimension=dim, days=days))
 
     @bp.route("/divergences")
@@ -74,6 +77,8 @@ def create_blueprint(engine: AuditEngine, url_prefix: str = "/audit") -> Bluepri
 
     @bp.route("/trigger/<tier>", methods=["POST"])
     def trigger(tier: str):
+        if tier not in ("light", "medium", "daily", "weekly"):
+            return jsonify({"error": "Invalid tier"}), 400
         results = engine.run_tier(tier)
         return jsonify([_result_dict(r) for r in results])
 
@@ -83,9 +88,17 @@ def create_blueprint(engine: AuditEngine, url_prefix: str = "/audit") -> Bluepri
 
     @bp.route("/feedback", methods=["POST"])
     def feedback():
-        data = request.get_json(force=True)
+        data = request.get_json(silent=True)
+        if not data or "score" not in data:
+            return jsonify({"error": "JSON body with 'score' field required"}), 400
+        try:
+            score = float(data["score"])
+        except (ValueError, TypeError):
+            return jsonify({"error": "score must be a number"}), 400
+        if not 0.0 <= score <= 1.0:
+            return jsonify({"error": "score must be between 0.0 and 1.0"}), 400
         row_id = engine.record_feedback(
-            score=float(data["score"]),
+            score=score,
             scope=data.get("scope", "overall"),
             text=data.get("text"),
             session_id=data.get("session_id"),
