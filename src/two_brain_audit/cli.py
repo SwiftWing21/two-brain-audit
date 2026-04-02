@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from typing import TYPE_CHECKING
 
@@ -15,6 +16,7 @@ def main(argv: list[str] | None = None) -> int:
         prog="two-brain-audit",
         description="Dual-layer audit: automated scoring + manual grading + reconciliation.",
     )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging")
     sub = parser.add_subparsers(dest="command")
 
     # ── init ──────────────────────────────────────────────────────────
@@ -64,6 +66,10 @@ def main(argv: list[str] | None = None) -> int:
     p_dash.add_argument("--baseline", default="audit_baseline.json")
 
     args = parser.parse_args(argv)
+
+    # Configure logging
+    level = logging.DEBUG if getattr(args, "verbose", False) else logging.INFO
+    logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
 
     if not args.command:
         parser.print_help()
