@@ -19,4 +19,4 @@ __all__ = [
     "score_to_grade",
 ]
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
