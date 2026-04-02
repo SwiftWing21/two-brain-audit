@@ -66,7 +66,7 @@ class DimensionResult:
     tier: str
     timestamp: str = ""
     ratchet_violation: dict[str, Any] | None = None
-    divergence_detail: "Divergence | None" = None
+    divergence_detail: Divergence | None = None
 
 
 @dataclass

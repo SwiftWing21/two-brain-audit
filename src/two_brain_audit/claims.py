@@ -125,8 +125,7 @@ def classify_divergence(
 
     # Staleness check: if the last commit is newer than the last review,
     # the manual assessment may be outdated.
-    if last_commit_timestamp and last_review_timestamp:
-        if last_commit_timestamp > last_review_timestamp:
+    if last_commit_timestamp and last_review_timestamp and last_commit_timestamp > last_review_timestamp:
             return Divergence(
                 gap_type=GapType.stale_optimism,
                 severity=Severity.medium,
