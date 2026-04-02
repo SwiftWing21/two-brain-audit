@@ -38,6 +38,7 @@ class PyPIIntegration:
 
         try:
             import importlib.metadata
+
             import httpx
 
             scores: list[float] = []

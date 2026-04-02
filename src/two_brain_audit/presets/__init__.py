@@ -1,10 +1,10 @@
 """Preset dimension configurations for common project types."""
 
-from presets.python_project import PYTHON_DIMENSIONS
-from presets.api_service import API_DIMENSIONS
-from presets.database import DATABASE_DIMENSIONS
-from presets.infrastructure import INFRASTRUCTURE_DIMENSIONS
-from presets.ml_pipeline import ML_PIPELINE_DIMENSIONS
+from two_brain_audit.presets.api_service import API_DIMENSIONS
+from two_brain_audit.presets.database import DATABASE_DIMENSIONS
+from two_brain_audit.presets.infrastructure import INFRASTRUCTURE_DIMENSIONS
+from two_brain_audit.presets.ml_pipeline import ML_PIPELINE_DIMENSIONS
+from two_brain_audit.presets.python_project import PYTHON_DIMENSIONS
 
 PRESETS: dict[str, list] = {
     "python": PYTHON_DIMENSIONS,

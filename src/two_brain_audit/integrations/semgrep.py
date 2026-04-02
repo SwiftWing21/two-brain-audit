@@ -52,7 +52,7 @@ class SemgrepIntegration:
                 cmd.extend(["--config", rule])
             cmd.extend(self.targets)
 
-            result = subprocess.run(
+            result = subprocess.run(  # noqa: S603
                 cmd,
                 capture_output=True,
                 text=True,

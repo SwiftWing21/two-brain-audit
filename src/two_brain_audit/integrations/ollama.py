@@ -30,12 +30,12 @@ class OllamaIntegration:
 
     def check_health(self) -> tuple[float, dict[str, Any]]:
         """Binary: Ollama responds and has >= 1 model loaded."""
-        import urllib.request
         import json
+        import urllib.request
 
         try:
-            req = urllib.request.Request(f"{self.host}/api/tags")
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            req = urllib.request.Request(f"{self.host}/api/tags")  # noqa: S310
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:  # noqa: S310
                 data = json.loads(resp.read())
             models = data.get("models", [])
             if models:

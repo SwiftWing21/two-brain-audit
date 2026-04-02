@@ -21,7 +21,7 @@ def _check_test_coverage() -> tuple[float, dict]:
     import subprocess
     try:
         result = subprocess.run(
-            ["python", "-m", "pytest", "--tb=no", "-q"],
+            ["python", "-m", "pytest", "--tb=no", "-q"],  # noqa: S607
             capture_output=True, text=True, timeout=120,
         )
         import re
@@ -39,7 +39,7 @@ def _check_lint_score() -> tuple[float, dict]:
     import subprocess
     try:
         result = subprocess.run(
-            ["ruff", "check", ".", "--statistics", "-q"],
+            ["ruff", "check", ".", "--statistics", "-q"],  # noqa: S607
             capture_output=True, text=True, timeout=60,
         )
         errors = result.stdout.strip().count("\n") + (1 if result.stdout.strip() else 0)
@@ -56,7 +56,7 @@ def _check_type_coverage() -> tuple[float, dict]:
     import subprocess
     try:
         result = subprocess.run(
-            ["mypy", ".", "--no-error-summary"],
+            ["mypy", ".", "--no-error-summary"],  # noqa: S607
             capture_output=True, text=True, timeout=120,
         )
         if result.returncode == 0:

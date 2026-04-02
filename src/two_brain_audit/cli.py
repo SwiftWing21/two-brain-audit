@@ -107,7 +107,7 @@ def _cmd_init(args: argparse.Namespace) -> int:
 
 
 def _cmd_register(engine: AuditEngine, args: argparse.Namespace) -> int:
-    from presets import PRESETS
+    from two_brain_audit.presets import PRESETS
 
     dims = PRESETS.get(args.preset)
     if not dims:
