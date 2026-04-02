@@ -77,6 +77,9 @@ class TestCLI:
     def test_run_no_dimensions(self, tmp_path):
         db = str(tmp_path / "test.db")
         baseline = str(tmp_path / "test_baseline.json")
+        # Use --target to an empty dir so auto-load doesn't find a stale config
+        empty = tmp_path / "empty"
+        empty.mkdir()
         main(["init", "--db", db, "--baseline", baseline])
-        result = main(["run", "light", "--db", db, "--baseline", baseline])
+        result = main(["run", "light", "--db", db, "--baseline", baseline, "--target", str(empty)])
         assert result == 1  # no dimensions = error
