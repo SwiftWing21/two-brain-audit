@@ -151,6 +151,12 @@ def _cmd_register(engine: AuditEngine, args: argparse.Namespace) -> int:
     print(f"Registered {len(dims)} dimensions from '{args.preset}' preset:")
     for d in dims:
         print(f"  {d.name} ({d.tier.value}, confidence={d.confidence})")
+    import json
+    from pathlib import Path
+    target = getattr(args, "target", ".")
+    config_path = Path(target).resolve() / ".two-brain-audit.json"
+    config = {"preset": args.preset, "created": True}
+    config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
     return 0
 
 

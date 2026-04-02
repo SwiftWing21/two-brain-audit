@@ -65,6 +65,15 @@ class TestCLI:
         result = main(["run", "light", "--db", db, "--baseline", baseline, "--target", target])
         assert result == 0
 
+    def test_register_persists_config(self, tmp_path):
+        import json
+        db = str(tmp_path / "test.db")
+        baseline = str(tmp_path / "test_baseline.json")
+        main(["init", "--db", db, "--baseline", baseline])
+        main(["register", "--preset", "python", "--db", db, "--baseline", baseline, "--target", str(tmp_path)])
+        config = json.loads((tmp_path / ".two-brain-audit.json").read_text())
+        assert config["preset"] == "python"
+
     def test_run_no_dimensions(self, tmp_path):
         db = str(tmp_path / "test.db")
         baseline = str(tmp_path / "test_baseline.json")
