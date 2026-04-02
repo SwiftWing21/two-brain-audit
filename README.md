@@ -247,6 +247,57 @@ Exit code 0 = aligned. Exit code 1 = divergences or failing dimensions. The JSON
 | `infrastructure` | 8 dimensions | DevOps |
 | `ml_pipeline` | 7 dimensions | ML workflows |
 
+## Dogfooding: TBR Auditing Itself
+
+We ran two-brain-audit on its own codebase. Here's what happened.
+
+**Step 1: Auto-scorer says everything is perfect.**
+
+```
+Dimension              Auto  Grade   Status
+  testing             1.000      S   ok
+  lint                1.000      S   ok
+  security            1.000      S   ok
+  test_depth          1.000      S   ok
+  packaging           1.000      S   ok
+  ci                  1.000      S   ok
+  documentation       0.920     A+   ok
+  type_coverage       0.748      B   ok
+
+Overall: A+ (0.959)
+```
+
+Seven S-tier scores. Auto says ship it.
+
+**Step 2: Human reviewer finds real issues.**
+
+A deep code review graded the same dimensions differently:
+
+| Dimension | Auto | Human | Gap |
+|-----------|------|-------|-----|
+| testing | S (1.0) | A- | Auto counts pass rate. Human found missing DB roundtrip tests, untested reviewer modules. |
+| security | S (1.0) | B+ | Auto's ruff S rules found 0 issues. Human found os.chdir thread safety hazard, sidecar path traversal weakness. |
+| test_depth | S (1.0) | A- | Auto counts test files per module (8/8). Human noted reviewer modules have zero coverage. |
+| lint | S (1.0) | A- | Auto: ruff clean. Human found orphaned functions, inconsistent fallback behavior. |
+
+**Step 3: Divergence detector fires.**
+
+```
+Divergences: 4
+  testing:    auto=1.000 vs manual=A- (gap=0.150)
+  lint:       auto=1.000 vs manual=A- (gap=0.150)
+  security:   auto=1.000 vs manual=B+ (gap=0.200)
+  test_depth: auto=1.000 vs manual=A- (gap=0.150)
+```
+
+**Step 4: Fix the real issues.**
+
+The divergences pointed to 10 concrete fixes: thread safety lock on CWD changes, atomic sidecar writes, consistent error fallbacks, missing test coverage, orphaned reconciler functions. All fixed in v0.4.0, tests went from 99 to 117.
+
+**The auto-scorer was wrong.** Not because it's broken — it correctly measured what it measures (pass rate, lint errors, file counts). But those measurements missed real issues that only a reviewer could see. Without the divergence detection, we would have shipped with a thread-safety bug.
+
+This is the entire product thesis in one example: **neither brain alone is sufficient.**
+
 ## Docs
 
 - **[Quickstart Guide](docs/QUICKSTART.md)** — step-by-step with examples
