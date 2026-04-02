@@ -143,11 +143,21 @@ The manual grade doesn't have to come from you. Point an LLM at any dimension an
 
 **Three review modes:**
 
-| Mode | What it does | Cost | Best for |
-|------|-------------|------|----------|
-| **Single** | One provider, one pass | ~$0.01 | Quick sanity check |
-| **Swarm** | One provider, 4 specialized lenses (security auditor, performance engineer, architect, compliance auditor) — findings cross-validated | ~$0.04 | Deep single-dimension review |
-| **Consensus** | Same prompt to Claude + Gemini + OpenAI, compare scores | ~$0.03 | When you want multiple opinions |
+| Mode | What it does | API calls | Best for |
+|------|-------------|-----------|----------|
+| **Single** | One provider, one pass | 1 | Quick sanity check |
+| **Swarm** | One provider, 4 specialized lenses (security auditor, performance engineer, architect, compliance auditor) — findings cross-validated | 4 | Deep single-dimension review |
+| **Consensus** | Same prompt to Claude + Gemini + OpenAI, compare scores | 1 per provider | When you want multiple opinions |
+
+**Cost scales with context size.** The system prompt is ~200 tokens. Your cost is driven by how much code/context you pass in:
+
+| Context size | Sonnet (single) | Sonnet (swarm, 4 lenses) | Flash + 4o-mini (consensus) |
+|-------------|-----------------|--------------------------|----------------------------|
+| ~1K tokens (one file) | ~$0.005 | ~$0.02 | ~$0.002 |
+| ~10K tokens (module) | ~$0.05 | ~$0.20 | ~$0.01 |
+| ~50K tokens (small repo) | ~$0.20 | ~$0.80 | ~$0.05 |
+
+Every review logs exact input/output tokens and cost in the DB. Use `cache.stats()` to see cumulative spend. Cached reviews (7-day TTL) cost nothing on repeat runs.
 
 ```python
 # Trigger a swarm review — 4 lenses review independently, then cross-validate
