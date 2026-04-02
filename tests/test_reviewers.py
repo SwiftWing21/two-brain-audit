@@ -1,8 +1,13 @@
 """Tests for the reviewer system (cache, JSON parsing, providers)."""
 
+import logging
 
+from two_brain_audit.reviewers.budget import BudgetGuard
 from two_brain_audit.reviewers.cache import ReviewCache
 from two_brain_audit.reviewers.providers import (
+    ClaudeProvider,
+    GeminiProvider,
+    OpenAIProvider,
     _calc_cost,
     _parse_review_json,
 )
@@ -76,3 +81,94 @@ class TestCalcCost:
     def test_zero_tokens(self):
         cost = _calc_cost("claude-sonnet-4-6", 0, 0)
         assert cost == 0.0
+
+
+class TestProviderRepr:
+    def test_claude_repr_masks_key(self):
+        p = ClaudeProvider(api_key="sk-ant-api03-xxxxxxxxxxxxxxxxxxxx-yyyyyyyy")
+        r = repr(p)
+        assert "sk-ant-a" in r  # first 8 chars
+        assert "yyyy" in r  # last 4 chars
+        assert "xxxxxxxxxxxxxxxxxxxx" not in r
+
+    def test_gemini_repr_masks_key(self):
+        p = GeminiProvider(api_key="AIzaSyD-abcdefghijklmnop")
+        r = repr(p)
+        assert "AIzaSyD-" in r
+        assert "abcdefghijklmnop" not in r
+
+    def test_openai_repr_masks_key(self):
+        p = OpenAIProvider(api_key="sk-proj-abcdefghijklmnop1234")
+        r = repr(p)
+        assert "sk-proj-" in r
+        assert "abcdefghijklmnop" not in r
+
+    def test_short_key_shows_stars(self):
+        p = ClaudeProvider(api_key="short")
+        r = repr(p)
+        assert "***" in r
+        assert "short" not in r
+
+
+class TestKeyFormatWarning:
+    def test_claude_warns_on_bad_prefix(self, caplog):
+        with caplog.at_level(logging.WARNING, logger="two_brain_audit.reviewers"):
+            ClaudeProvider(api_key="bad-key-format-xxxxxxxx")
+        assert "unexpected format" in caplog.text
+
+    def test_claude_no_warn_on_good_prefix(self, caplog):
+        with caplog.at_level(logging.WARNING, logger="two_brain_audit.reviewers"):
+            ClaudeProvider(api_key="sk-ant-valid-key-here")
+        assert "unexpected format" not in caplog.text
+
+    def test_gemini_warns_on_bad_prefix(self, caplog):
+        with caplog.at_level(logging.WARNING, logger="two_brain_audit.reviewers"):
+            GeminiProvider(api_key="bad-gemini-key-xxxxxx")
+        assert "unexpected format" in caplog.text
+
+    def test_openai_warns_on_bad_prefix(self, caplog):
+        with caplog.at_level(logging.WARNING, logger="two_brain_audit.reviewers"):
+            OpenAIProvider(api_key="bad-openai-key-xxxxxx")
+        assert "unexpected format" in caplog.text
+
+    def test_no_warn_on_empty_key(self, caplog):
+        with caplog.at_level(logging.WARNING, logger="two_brain_audit.reviewers"):
+            ClaudeProvider(api_key="")
+        assert "unexpected format" not in caplog.text
+
+
+class TestBudgetGuard:
+    def test_check_allows_within_budget(self):
+        bg = BudgetGuard(max_usd=1.0)
+        assert bg.check(estimated_cost=0.50) is True
+
+    def test_check_blocks_over_budget(self):
+        bg = BudgetGuard(max_usd=1.0)
+        bg.record(0.95)
+        assert bg.check(estimated_cost=0.10) is False
+
+    def test_record_tracks_spend(self):
+        bg = BudgetGuard(max_usd=1.0)
+        bg.record(0.30)
+        bg.record(0.20)
+        assert bg.spent_usd == 0.50
+
+    def test_remaining_decreases(self):
+        bg = BudgetGuard(max_usd=1.0)
+        bg.record(0.60)
+        assert bg.remaining == 0.40
+
+    def test_remaining_never_negative(self):
+        bg = BudgetGuard(max_usd=1.0)
+        bg.record(1.50)
+        assert bg.remaining == 0.0
+
+    def test_exact_budget_allows(self):
+        bg = BudgetGuard(max_usd=1.0)
+        bg.record(0.95)
+        assert bg.check(estimated_cost=0.05) is True
+
+    def test_check_default_estimate(self):
+        bg = BudgetGuard(max_usd=0.03)
+        # default estimated_cost=0.05 exceeds 0.03
+        assert bg.check() is False

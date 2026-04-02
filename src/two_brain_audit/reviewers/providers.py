@@ -106,10 +106,17 @@ class ClaudeProvider:
     """Anthropic Claude API client."""
 
     name = "claude"
+    store_raw: bool = False
 
     def __init__(self, model: str = "claude-sonnet-4-6", api_key: str | None = None) -> None:
         self.model = model
         self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY", "")
+        if self.api_key and not self.api_key.startswith("sk-ant-"):
+            log.warning("API key for %s has unexpected format", self.name)
+
+    def __repr__(self) -> str:
+        masked = self.api_key[:8] + "..." + self.api_key[-4:] if len(self.api_key) > 12 else "***"
+        return f"{self.__class__.__name__}(model={self.model!r}, key={masked})"
 
     @property
     def available(self) -> bool:
@@ -157,7 +164,7 @@ class ClaudeProvider:
             confidence=parsed.get("confidence", 0.5),
             findings=parsed.get("findings", []),
             recommendations=parsed.get("recommendations", []),
-            raw_response=text,
+            raw_response=text if self.store_raw else "",
             model=self.model,
             provider=self.name,
             input_tokens=input_tokens,
@@ -171,10 +178,17 @@ class GeminiProvider:
     """Google Gemini API client."""
 
     name = "gemini"
+    store_raw: bool = False
 
     def __init__(self, model: str = "gemini-2.0-flash", api_key: str | None = None) -> None:
         self.model = model
         self.api_key = api_key or os.environ.get("GOOGLE_API_KEY", "")
+        if self.api_key and not self.api_key.startswith("AI"):
+            log.warning("API key for %s has unexpected format", self.name)
+
+    def __repr__(self) -> str:
+        masked = self.api_key[:8] + "..." + self.api_key[-4:] if len(self.api_key) > 12 else "***"
+        return f"{self.__class__.__name__}(model={self.model!r}, key={masked})"
 
     @property
     def available(self) -> bool:
@@ -218,7 +232,7 @@ class GeminiProvider:
             confidence=parsed.get("confidence", 0.5),
             findings=parsed.get("findings", []),
             recommendations=parsed.get("recommendations", []),
-            raw_response=text,
+            raw_response=text if self.store_raw else "",
             model=self.model,
             provider=self.name,
             input_tokens=input_tokens,
@@ -232,10 +246,17 @@ class OpenAIProvider:
     """OpenAI / ChatGPT API client."""
 
     name = "openai"
+    store_raw: bool = False
 
     def __init__(self, model: str = "gpt-4o-mini", api_key: str | None = None) -> None:
         self.model = model
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
+        if self.api_key and not self.api_key.startswith("sk-"):
+            log.warning("API key for %s has unexpected format", self.name)
+
+    def __repr__(self) -> str:
+        masked = self.api_key[:8] + "..." + self.api_key[-4:] if len(self.api_key) > 12 else "***"
+        return f"{self.__class__.__name__}(model={self.model!r}, key={masked})"
 
     @property
     def available(self) -> bool:
@@ -285,7 +306,7 @@ class OpenAIProvider:
             confidence=parsed.get("confidence", 0.5),
             findings=parsed.get("findings", []),
             recommendations=parsed.get("recommendations", []),
-            raw_response=text,
+            raw_response=text if self.store_raw else "",
             model=self.model,
             provider=self.name,
             input_tokens=input_tokens,

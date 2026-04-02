@@ -177,3 +177,19 @@ These layers work together to prevent both false positives (flagging something t
 - Nygard, M. *Release It!* (2007, 2nd ed. 2018) — circuit breaker pattern
 - [pytest Documentation](https://docs.pytest.org/)
 - [mypy Documentation](https://mypy.readthedocs.io/)
+
+---
+
+## API Key Safety
+
+1. **Environment variables only** -- API keys are read from `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, and `OPENAI_API_KEY` environment variables. Never store keys in config files or source code.
+
+2. **`__repr__` masks keys automatically** -- All provider classes (`ClaudeProvider`, `GeminiProvider`, `OpenAIProvider`) implement `__repr__` that shows only the first 8 and last 4 characters of the key. Short keys display as `***`. This prevents accidental key leakage in logs, tracebacks, and REPL output.
+
+3. **Key format validation** -- Each provider logs a warning at initialization if the API key does not match the expected prefix (`sk-ant-` for Claude, `AI` for Gemini, `sk-` for OpenAI). This catches misconfigured environment variables early without blocking execution.
+
+4. **`raw_response` disabled by default** -- Provider classes have `store_raw = False` by default. LLM response text is only stored in `ReviewResult.raw_response` when `store_raw` is explicitly set to `True`. This reduces the amount of potentially sensitive project code retained in memory and cache.
+
+5. **`BudgetGuard` caps per-session spend** -- The `BudgetGuard` class enforces a configurable USD ceiling (default: $1.00) per session. Pass it to `consensus_review(budget=...)` to skip providers when the budget is exhausted. Call `budget.remaining` to check how much is left.
+
+6. **Review cache is local only** -- The `review_cache` SQLite table stores findings that may reference project code snippets and file paths. This data is stored in a local SQLite database only and is never transmitted to external services.

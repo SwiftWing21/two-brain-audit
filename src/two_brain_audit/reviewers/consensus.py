@@ -18,6 +18,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 from two_brain_audit.grades import score_to_grade
+from two_brain_audit.reviewers.budget import BudgetGuard  # noqa: TCH001
 from two_brain_audit.reviewers.cache import ReviewCache  # noqa: TCH001
 from two_brain_audit.reviewers.providers import (
     ReviewResult,
@@ -34,6 +35,7 @@ def consensus_review(
     providers: list | None = None,
     cache: ReviewCache | None = None,
     parallel: bool = True,
+    budget: BudgetGuard | None = None,
 ) -> dict[str, Any]:
     """Run the same review through multiple providers and compare.
 
@@ -100,6 +102,16 @@ def consensus_review(
                 continue
         to_run.append(provider)
 
+    # Filter providers that exceed budget
+    if budget:
+        allowed: list[Any] = []
+        for p in to_run:
+            if budget.check():
+                allowed.append(p)
+            else:
+                log.warning("Budget exceeded, skipping %s (%s)", p.name, p.model)
+        to_run = allowed
+
     # Run cache misses
     if parallel and len(to_run) > 1:
         with ThreadPoolExecutor(max_workers=len(to_run)) as pool:
@@ -112,14 +124,21 @@ def consensus_review(
                 try:
                     result = future.result()
                     results[provider.name] = result
+                    if budget:
+                        budget.record(result.cost_usd)
                     _cache_result(cache, dimension, context, provider, result)
                 except Exception as exc:
                     log.warning("%s review failed: %s", provider.name, exc)
     else:
         for provider in to_run:
+            if budget and not budget.check():
+                log.warning("Budget exceeded, skipping %s (%s)", provider.name, provider.model)
+                continue
             try:
                 result = provider.review(system, user)
                 results[provider.name] = result
+                if budget:
+                    budget.record(result.cost_usd)
                 _cache_result(cache, dimension, context, provider, result)
             except Exception as exc:
                 log.warning("%s review failed: %s", provider.name, exc)
