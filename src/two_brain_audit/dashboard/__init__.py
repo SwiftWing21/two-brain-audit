@@ -72,6 +72,9 @@ def create_blueprint(engine: AuditEngine, url_prefix: str = "/audit") -> Bluepri
 
     @bp.route("/acknowledge/<dimension>", methods=["POST"])
     def acknowledge(dimension: str):
+        import re as _re
+        if not _re.match(r"^[a-z0-9_-]{1,64}$", dimension):
+            return jsonify({"error": "Invalid dimension name"}), 400
         engine.acknowledge(dimension)
         return jsonify({"ok": True, "dimension": dimension})
 

@@ -165,18 +165,23 @@ two-brain-audit/
 │   ├── feedback.py          # LLMClassifier protocol, conversion helpers
 │   ├── cli.py               # CLI entry point
 │   ├── dashboard/           # Optional Flask blueprint
-│   └── exporters/           # JSON, CSV, Markdown report generators
-├── presets/                  # Dimension configs per project type
-│   ├── python_project.py    # 8 dimensions for Python repos
-│   ├── api_service.py       # 8 dimensions for REST APIs
-│   ├── database.py          # 7 dimensions for database health
-│   ├── infrastructure.py    # 8 dimensions for DevOps/infra
-│   └── ml_pipeline.py       # 7 dimensions for ML workflows
-├── integrations/             # Pluggable external data sources
-│   ├── github.py            # CI status, open bugs, stale PRs
-│   ├── semgrep.py           # SAST security scanning
-│   ├── pypi.py              # Dependency version drift
-│   └── ollama.py            # Local model health
+│   ├── exporters/           # JSON, CSV, Markdown report generators
+│   ├── presets/             # Dimension configs per project type
+│   │   ├── python_project.py # 8 dimensions for Python repos
+│   │   ├── api_service.py   # 8 dimensions for REST APIs
+│   │   ├── database.py      # 7 dimensions for database health
+│   │   ├── infrastructure.py # 8 dimensions for DevOps/infra
+│   │   └── ml_pipeline.py   # 7 dimensions for ML workflows
+│   ├── integrations/        # Pluggable external data sources
+│   │   ├── github.py        # CI status, open bugs, stale PRs
+│   │   ├── semgrep.py       # SAST security scanning
+│   │   ├── pypi.py          # Dependency version drift
+│   │   └── ollama.py        # Local model health
+│   └── reviewers/           # LLM-powered review system
+│       ├── providers.py     # Claude, Gemini, OpenAI clients
+│       ├── oss_review.py    # OSS swarm lenses + cross-validation
+│       ├── consensus.py     # Multi-provider consensus
+│       └── cache.py         # Local review result cache
 ├── examples/biged/           # Reference implementation (12 dimensions)
 ├── tests/                    # pytest test suite
 ├── docs/                     # This file + future guides

@@ -4,19 +4,23 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from two_brain_audit.db import AuditDB
+from two_brain_audit.grades import grade_to_score, is_failing, score_to_grade
+from two_brain_audit.reconciler import check_ratchet, classify_status
+from two_brain_audit.sidecar import Sidecar
+from two_brain_audit.tiers import DEFAULT_SCHEDULES, Tier
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-from two_brain_audit.db import AuditDB
-from two_brain_audit.grades import grade_to_score, is_failing, score_to_grade
-from two_brain_audit.reconciler import check_ratchet
-from two_brain_audit.sidecar import Sidecar
-from two_brain_audit.tiers import DEFAULT_SCHEDULES, Tier
+# Lock to prevent concurrent os.chdir races in run_tier/run_dimension
+_chdir_lock = threading.Lock()
 
 log = logging.getLogger("two_brain_audit")
 
@@ -131,57 +135,52 @@ class AuditEngine:
         results: list[DimensionResult] = []
         ts = time.strftime("%Y-%m-%dT%H:%M:%S")
 
-        old_cwd = os.getcwd()
-        try:
-            os.chdir(self.target_path)
-            for name, dim in self._dimensions.items():
-                if not tier.includes(dim.tier):
-                    continue
+        with _chdir_lock:
+            old_cwd = os.getcwd()
+            try:
+                os.chdir(self.target_path)
+                for name, dim in self._dimensions.items():
+                    if not tier.includes(dim.tier):
+                        continue
 
-                try:
-                    auto_score, auto_detail = dim.check()
-                    auto_score = max(0.0, min(1.0, auto_score))
-                except Exception as exc:
-                    log.warning("Dimension %s check failed: %s", name, exc)
-                    auto_score = 0.0
-                    auto_detail = {"error": str(exc)}
+                    try:
+                        auto_score, auto_detail = dim.check()
+                        auto_score = max(0.0, min(1.0, auto_score))
+                    except Exception as exc:
+                        log.warning("Dimension %s check failed: %s", name, exc)
+                        auto_score = 0.5
+                        auto_detail = {"error": str(exc)}
 
-                # Manual grade from sidecar
-                manual_entry = baseline.get("dimensions", {}).get(name, {})
-                manual_grade = manual_entry.get("grade")
-                manual_score = grade_to_score(manual_grade) if manual_grade else None
+                    # Reconciliation via classify_status
+                    manual_entry = baseline.get("dimensions", {}).get(name, {})
+                    manual_grade = manual_entry.get("grade")
+                    manual_score = grade_to_score(manual_grade) if manual_grade else None
+                    status = classify_status(
+                        auto_score, manual_score, dim.confidence,
+                        self.divergence_threshold, self.confidence_floor,
+                    )
+                    divergent = status in ("warn", "fail")
+                    acknowledged = self.db.is_acknowledged(name)
+                    ratchet_grade = self.sidecar.get_ratchet(name)
+                    ratchet_violation = check_ratchet(name, auto_score, ratchet_grade)
 
-                # Divergence detection
-                divergent = False
-                if manual_score is not None and dim.confidence >= self.confidence_floor:
-                    divergent = abs(auto_score - manual_score) > self.divergence_threshold
-
-                # Check if previously acknowledged
-                acknowledged = self.db.is_acknowledged(name)
-
-                # Ratchet enforcement
-                ratchet_grade = self.sidecar.get_ratchet(name)
-                ratchet_violation = check_ratchet(name, auto_score, ratchet_grade)
-
-                result = DimensionResult(
-                    name=name,
-                    auto_score=auto_score,
-                    auto_detail=auto_detail,
-                    auto_confidence=dim.confidence,
-                    manual_grade=manual_grade,
-                    manual_score=manual_score,
-                    divergent=divergent,
-                    acknowledged=acknowledged,
-                    tier=tier.value,
-                    timestamp=ts,
-                    ratchet_violation=ratchet_violation,
-                )
-                results.append(result)
-
-                # Persist
-                self.db.write_score(result)
-        finally:
-            os.chdir(old_cwd)
+                    result = DimensionResult(
+                        name=name,
+                        auto_score=auto_score,
+                        auto_detail=auto_detail,
+                        auto_confidence=dim.confidence,
+                        manual_grade=manual_grade,
+                        manual_score=manual_score,
+                        divergent=divergent,
+                        acknowledged=acknowledged,
+                        tier=tier.value,
+                        timestamp=ts,
+                        ratchet_violation=ratchet_violation,
+                    )
+                    results.append(result)
+                    self.db.write_score(result)
+            finally:
+                os.chdir(old_cwd)
 
         return results
 
@@ -193,25 +192,27 @@ class AuditEngine:
         baseline = self.sidecar.load()
         ts = time.strftime("%Y-%m-%dT%H:%M:%S")
 
-        old_cwd = os.getcwd()
-        try:
-            os.chdir(self.target_path)
-            auto_score, auto_detail = dim.check()
-            auto_score = max(0.0, min(1.0, auto_score))
-        except Exception as exc:
-            log.warning("Dimension %s check failed: %s", name, exc)
-            auto_score = 0.0
-            auto_detail = {"error": str(exc)}
-        finally:
-            os.chdir(old_cwd)
+        with _chdir_lock:
+            old_cwd = os.getcwd()
+            try:
+                os.chdir(self.target_path)
+                auto_score, auto_detail = dim.check()
+                auto_score = max(0.0, min(1.0, auto_score))
+            except Exception as exc:
+                log.warning("Dimension %s check failed: %s", name, exc)
+                auto_score = 0.5
+                auto_detail = {"error": str(exc)}
+            finally:
+                os.chdir(old_cwd)
 
         manual_entry = baseline.get("dimensions", {}).get(name, {})
         manual_grade = manual_entry.get("grade")
         manual_score = grade_to_score(manual_grade) if manual_grade else None
-
-        divergent = False
-        if manual_score is not None and dim.confidence >= self.confidence_floor:
-            divergent = abs(auto_score - manual_score) > self.divergence_threshold
+        status = classify_status(
+            auto_score, manual_score, dim.confidence,
+            self.divergence_threshold, self.confidence_floor,
+        )
+        divergent = status in ("warn", "fail")
 
         result = DimensionResult(
             name=name,
@@ -267,15 +268,14 @@ class AuditEngine:
         elif mode == "consensus":
             result = consensus_review(dimension, context, cache=cache)
         else:
-            result = oss_review(dimension, context)
+            r = oss_review(dimension, context)
             result = {
-                "grade": result.grade if hasattr(result, "grade") else result.get("grade", "C"),
-                "score": result.score if hasattr(result, "score") else result.get("score", 0.6),
-                "confidence": result.confidence if hasattr(result, "confidence") else result.get("confidence", 0.5),
-                "findings": result.findings if hasattr(result, "findings") else result.get("findings", []),
-                "cost_usd": result.cost_usd if hasattr(result, "cost_usd") else result.get("cost_usd", 0),
+                "grade": r.grade, "score": r.score, "confidence": r.confidence,
+                "findings": r.findings, "recommendations": r.recommendations,
+                "cost_usd": r.cost_usd, "model": r.model, "provider": r.provider,
             }
 
+        # Normalize keys (consensus uses different names)
         grade = result.get("grade") or result.get("consensus_grade", "C")
         confidence = result.get("confidence") or result.get("agreement", 0.5)
         findings = result.get("findings") or result.get("merged_findings", [])
@@ -373,9 +373,5 @@ class AuditEngine:
     def close(self) -> None:
         """Close DB connections and release resources."""
         if self._db is not None:
-            try:
-                conn = self._db._get_conn()
-                conn.close()
-            except Exception:
-                log.debug("Error closing DB connection", exc_info=True)
+            self._db.close()
             self._db = None

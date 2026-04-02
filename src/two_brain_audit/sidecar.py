@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import time
 from pathlib import Path
 from typing import Any
@@ -50,10 +51,14 @@ class Sidecar:
             return dict(DEFAULT_BASELINE)
 
     def save(self, data: dict[str, Any]) -> None:
-        """Write sidecar back to disk."""
-        with open(self.path, "w", encoding="utf-8") as f:
+        """Write sidecar atomically — temp file + os.replace to prevent corruption."""
+        tmp_path = self.path.with_suffix(".tmp")
+        with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
             f.write("\n")
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, self.path)
 
     def init(self) -> Path:
         """Create a default sidecar file if it doesn't exist. Returns the path."""

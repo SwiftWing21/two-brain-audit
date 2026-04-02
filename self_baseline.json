@@ -1,0 +1,54 @@
+{
+  "version": "0.1.0",
+  "dimensions": {
+    "testing": {
+      "grade": "A-",
+      "source": "human",
+      "updated": "2026-04-02",
+      "notes": "Deep review: 99 tests, good coverage but DB roundtrip and reviewer modules untested"
+    },
+    "lint": {
+      "grade": "A-",
+      "source": "human",
+      "updated": "2026-04-02",
+      "notes": "Code quality: good naming/consistency, broken-check fallback should be 0.5 not 0.0, classify_status unused"
+    },
+    "documentation": {
+      "grade": "S",
+      "source": "human",
+      "updated": "2026-04-02",
+      "notes": "Exceptional README, QUICKSTART, ARCHITECTURE, STANDARDS. Best-in-class."
+    },
+    "packaging": {
+      "grade": "A+",
+      "source": "human",
+      "updated": "2026-04-02",
+      "notes": "Zero mandatory deps, complete pyproject.toml, py.typed, classifiers correct"
+    },
+    "security": {
+      "grade": "B+",
+      "source": "human",
+      "updated": "2026-04-02",
+      "notes": "Sidecar path traversal logs-and-continues, os.chdir not thread-safe, provider api_key in plain attr"
+    },
+    "type_coverage": {
+      "grade": "A-",
+      "source": "human",
+      "updated": "2026-04-02",
+      "notes": "Thorough annotations, from __future__ everywhere, but some untyped params in dashboard/db"
+    },
+    "test_depth": {
+      "grade": "A-",
+      "source": "human",
+      "updated": "2026-04-02",
+      "notes": "Covers engine/db/cli/feedback/grades/reconciler/sidecar/tiers/dashboard/exporters/presets, missing reviewer tests"
+    },
+    "ci": {
+      "grade": "S",
+      "source": "human",
+      "updated": "2026-04-02",
+      "notes": "CI on 4 matrix jobs, auto-publish via trusted publisher, lint+test steps"
+    }
+  },
+  "ratchets": {}
+}

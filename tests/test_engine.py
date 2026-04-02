@@ -72,13 +72,14 @@ class TestRunTier:
         results = tmp_engine.run_tier("light")
         assert results[0].auto_score == 1.0
 
-    def test_check_failure_returns_zero(self, tmp_engine):
-        tmp_engine.register(Dimension(
-            name="broken", check=lambda: (_ for _ in ()).throw(RuntimeError("boom")),
-            tier=Tier.LIGHT,
-        ))
+    def test_check_failure_returns_half(self, tmp_engine):
+        """Failed checks return 0.5 (unknown), not 0.0 (failing)."""
+        def broken():
+            raise RuntimeError("boom")
+        tmp_engine.register(Dimension(name="broken", check=broken, tier=Tier.LIGHT))
         results = tmp_engine.run_tier("light")
-        assert results[0].auto_score == 0.0
+        assert results[0].auto_score == 0.5
+        assert "error" in results[0].auto_detail
 
 
 class TestReconciliation:

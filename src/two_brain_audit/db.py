@@ -218,3 +218,13 @@ class AuditDB:
         scores = conn.execute("SELECT COUNT(*) FROM audit_scores").fetchone()[0]
         feedback = conn.execute("SELECT COUNT(*) FROM user_feedback").fetchone()[0]
         return {"audit_scores": scores, "user_feedback": feedback}
+
+    def close(self) -> None:
+        """Close the thread-local connection if open."""
+        import contextlib
+
+        conn = getattr(self._local, "conn", None)
+        if conn is not None:
+            with contextlib.suppress(Exception):
+                conn.close()
+            self._local.conn = None

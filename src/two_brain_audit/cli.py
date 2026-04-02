@@ -88,6 +88,9 @@ def main(argv: list[str] | None = None) -> int:
     target = getattr(args, "target", ".")
     engine = AuditEngine(db_path=args.db, baseline_path=args.baseline, target_path=target)
 
+    # Auto-load preset from saved project config (if exists)
+    _auto_load_preset(engine, target)
+
     if args.command == "register":
         return _cmd_register(engine, args)
     elif args.command == "run":
@@ -102,6 +105,26 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_dashboard(engine, args)
 
     return 0
+
+
+def _auto_load_preset(engine: AuditEngine, target: str) -> None:
+    """Auto-register dimensions from saved .two-brain-audit.json config."""
+    import json
+    from pathlib import Path
+
+    config_path = Path(target).resolve() / ".two-brain-audit.json"
+    if not config_path.exists():
+        return
+    try:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        preset_name = config.get("preset")
+        if preset_name and not engine.dimensions:
+            from two_brain_audit.presets import PRESETS
+            dims = PRESETS.get(preset_name, [])
+            if dims:
+                engine.register_many(dims)
+    except Exception:  # noqa: S110
+        pass
 
 
 def _cmd_init(args: argparse.Namespace) -> int:

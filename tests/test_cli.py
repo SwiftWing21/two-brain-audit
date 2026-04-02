@@ -44,3 +44,30 @@ class TestCLI:
         result = main(["export", "json", "-o", out, "--db", db, "--baseline", baseline])
         assert result == 0
         assert (tmp_path / "report.json").exists()
+
+    def test_register_preset(self, tmp_path):
+        db = str(tmp_path / "test.db")
+        baseline = str(tmp_path / "test_baseline.json")
+        main(["init", "--db", db, "--baseline", baseline])
+        result = main(["register", "--preset", "python", "--db", db, "--baseline", baseline])
+        assert result == 0
+
+    def test_run_with_target(self, tmp_path):
+        db = str(tmp_path / "test.db")
+        baseline = str(tmp_path / "test_baseline.json")
+        target = str(tmp_path)
+        # Create a minimal .two-brain-audit.json so auto-load works
+        import json
+        (tmp_path / ".two-brain-audit.json").write_text(
+            json.dumps({"preset": "python", "created": True}), encoding="utf-8"
+        )
+        main(["init", "--db", db, "--baseline", baseline])
+        result = main(["run", "light", "--db", db, "--baseline", baseline, "--target", target])
+        assert result == 0
+
+    def test_run_no_dimensions(self, tmp_path):
+        db = str(tmp_path / "test.db")
+        baseline = str(tmp_path / "test_baseline.json")
+        main(["init", "--db", db, "--baseline", baseline])
+        result = main(["run", "light", "--db", db, "--baseline", baseline])
+        assert result == 1  # no dimensions = error
