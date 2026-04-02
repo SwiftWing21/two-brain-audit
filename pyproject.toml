@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "two-brain-audit"
-version = "1.0.0"
+version = "1.0.1"
 description = "Dual-layer audit system combining automated scoring (left brain) with manual qualitative grading (right brain) and reconciliation."
 readme = "README.md"
 license = "MIT"
@@ -48,9 +48,9 @@ dev = [
 two-brain-audit = "two_brain_audit.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/maxtheman/two-brain-audit"
-Repository = "https://github.com/maxtheman/two-brain-audit"
-Issues = "https://github.com/maxtheman/two-brain-audit/issues"
+Homepage = "https://github.com/SwiftWing21/two-brain-audit"
+Repository = "https://github.com/SwiftWing21/two-brain-audit"
+Issues = "https://github.com/SwiftWing21/two-brain-audit/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/two_brain_audit"]

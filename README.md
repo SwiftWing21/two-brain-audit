@@ -311,7 +311,7 @@ This is the entire product thesis in one example: **neither brain alone is suffi
 
 ## Origin
 
-Extracted from [BigEd CC](https://github.com/maxtheman/Education) after production use on a 125-skill AI fleet with 12 audit dimensions, 4 tiers, and automated daily/weekly scheduling. The divergence detection pattern caught real issues that neither automated tests nor manual reviews caught alone.
+Extracted from [BigEd CC](https://github.com/SwiftWing21/Education) after production use on a 125-skill AI fleet with 12 audit dimensions, 4 tiers, and automated daily/weekly scheduling. The divergence detection pattern caught real issues that neither automated tests nor manual reviews caught alone.
 
 ## License
 
