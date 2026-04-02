@@ -101,6 +101,42 @@ That `DIVERGED` on security is the system working. Auto scored 0.85 (A-), but so
 
 Every check handles missing tools gracefully (returns 0.5 with a note, not a crash). Confidence determines how much weight divergence detection gives each dimension.
 
+## Wrap Your Existing Tools
+
+Two-Brain Audit doesn't replace your tooling. It sits on top of it.
+
+A dimension's `check` is just `Callable[[], tuple[float, dict]]`. That callable can hit any API, parse any CLI output, or query any system. The framework doesn't care where the score comes from — it just needs a number between 0 and 1, and a detail dict.
+
+```python
+# Wrap SonarQube's quality gate
+def sonarqube_gate():
+    resp = requests.get(f"{SONAR_URL}/api/qualitygates/project_status",
+                        params={"projectKey": PROJECT}, timeout=10)
+    data = resp.json()["projectStatus"]
+    return (1.0 if data["status"] == "OK" else 0.4, data)
+
+# Wrap Datadog SLO
+def datadog_slo():
+    resp = requests.get(f"{DD_URL}/api/v1/slo/{SLO_ID}",
+                        headers={"DD-API-KEY": KEY}, timeout=10)
+    sli = resp.json()["data"]["overall_status"][0]["sli_value"]
+    return (sli / 100.0, {"sli": sli})
+
+# Wrap any CLI tool
+def pylint_score():
+    result = subprocess.run(["pylint", "src/", "--output-format=json"],
+                            capture_output=True, text=True, timeout=120)
+    data = json.loads(result.stdout)
+    score = max(0.0, (10 - len(data)) / 10)  # normalize to 0-1
+    return (score, {"issues": len(data)})
+
+engine.register(Dimension(name="sonarqube", check=sonarqube_gate, confidence=0.9, tier=Tier.DAILY))
+engine.register(Dimension(name="slo_compliance", check=datadog_slo, confidence=0.95, tier=Tier.LIGHT))
+engine.register(Dimension(name="pylint", check=pylint_score, confidence=0.85, tier=Tier.MEDIUM))
+```
+
+This reframes the entire project: not "alternative to SonarQube" but **"the layer that watches whether SonarQube and your team's manual assessment still agree."** Use the presets to get started, then wire in whatever tools your team already runs.
+
 ## Web Dashboard
 
 ```bash
