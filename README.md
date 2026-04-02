@@ -137,6 +137,51 @@ engine.register(Dimension(name="pylint", check=pylint_score, confidence=0.85, ti
 
 This reframes the entire project: not "alternative to SonarQube" but **"the layer that watches whether SonarQube and your team's manual assessment still agree."** Use the presets to get started, then wire in whatever tools your team already runs.
 
+## LLM-Powered Reviews (The Right Brain On Demand)
+
+The manual grade doesn't have to come from you. Point an LLM at any dimension and get a structured review with cross-validated findings.
+
+**Three review modes:**
+
+| Mode | What it does | Cost | Best for |
+|------|-------------|------|----------|
+| **Single** | One provider, one pass | ~$0.01 | Quick sanity check |
+| **Swarm** | One provider, 4 specialized lenses (security auditor, performance engineer, architect, compliance auditor) — findings cross-validated | ~$0.04 | Deep single-dimension review |
+| **Consensus** | Same prompt to Claude + Gemini + OpenAI, compare scores | ~$0.03 | When you want multiple opinions |
+
+```python
+# Trigger a swarm review — 4 lenses review independently, then cross-validate
+result = engine.review_dimension("security", context=source_code, mode="swarm")
+# result["cross_validated"] = findings 2+ lenses agree on (high confidence)
+# result["single_source"] = findings from only 1 lens (investigate)
+
+# Multi-provider consensus — do Claude and Gemini agree?
+result = engine.review_dimension("architecture", context=source_code, mode="consensus")
+# result["agreement"] = 0.92 (they mostly agree)
+# result["provider_results"]["claude"]["grade"] = "A"
+# result["provider_results"]["gemini"]["grade"] = "A-"
+```
+
+The review result automatically updates the sidecar with `source: "llm_review"`. Now you have **three layers of gap detection**:
+1. Auto score vs manual grade (original divergence)
+2. LLM review vs auto score (does the model see something automation missed?)
+3. LLM review vs LLM review (do Claude and Gemini disagree? That's a signal too)
+
+**Swarm lenses** are where the magic happens. Four specialized reviewers look at the same code from different angles — a security auditor catches different things than a performance engineer. Findings that appear in 2+ lenses are **cross-validated** (high confidence). Findings from only one lens are flagged as single-source (investigate, but lower confidence).
+
+**Built-in cost safety:**
+- Local result cache (7-day TTL) — same context + same provider = cached, no API call
+- All costs tracked per review in the DB
+- Providers that aren't configured (no API key) are silently skipped
+
+```bash
+# Configure providers via environment variables
+export ANTHROPIC_API_KEY=sk-ant-...
+export GOOGLE_API_KEY=AI...
+export OPENAI_API_KEY=sk-...
+# Any combination works — uses whichever keys are available
+```
+
 ## Web Dashboard
 
 ```bash

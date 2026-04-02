@@ -223,6 +223,61 @@ class AuditEngine:
         """Acknowledge a divergence (dismiss without changing grade)."""
         self.db.acknowledge(dimension)
 
+    # ── LLM Review ────────────────────────────────────────────────────
+
+    def review_dimension(
+        self,
+        dimension: str,
+        context: str,
+        mode: str = "consensus",
+    ) -> dict[str, Any]:
+        """Trigger an LLM review and update the manual grade in the sidecar.
+
+        Modes:
+            "single" — one provider, one pass
+            "swarm" — one provider, 4 specialized lenses + cross-validation
+            "consensus" — all available providers, compare scores
+
+        Returns the review result dict. Also writes to sidecar with
+        source="llm_review".
+        """
+        from two_brain_audit.reviewers.cache import ReviewCache
+        from two_brain_audit.reviewers.consensus import consensus_review
+        from two_brain_audit.reviewers.oss_review import oss_review, swarm_review
+
+        cache = ReviewCache(db_path=self.db_path)
+
+        if mode == "swarm":
+            result = swarm_review(dimension, context)
+        elif mode == "consensus":
+            result = consensus_review(dimension, context, cache=cache)
+        else:
+            result = oss_review(dimension, context)
+            result = {
+                "grade": result.grade if hasattr(result, "grade") else result.get("grade", "C"),
+                "score": result.score if hasattr(result, "score") else result.get("score", 0.6),
+                "confidence": result.confidence if hasattr(result, "confidence") else result.get("confidence", 0.5),
+                "findings": result.findings if hasattr(result, "findings") else result.get("findings", []),
+                "cost_usd": result.cost_usd if hasattr(result, "cost_usd") else result.get("cost_usd", 0),
+            }
+
+        grade = result.get("grade") or result.get("consensus_grade", "C")
+        confidence = result.get("confidence") or result.get("agreement", 0.5)
+        findings = result.get("findings") or result.get("merged_findings", [])
+        cost = result.get("cost_usd") or result.get("total_cost_usd", 0)
+
+        # Write to sidecar
+        self.sidecar.set_grade(
+            dimension=dimension,
+            grade=grade,
+            source="llm_review",
+            notes=f"Mode: {mode}, findings: {len(findings)}, cost: ${cost:.4f}",
+            confidence=confidence,
+            findings=findings[:10],  # keep top 10 in sidecar
+        )
+
+        return result
+
     # ── Feedback ─────────────────────────────────────────────────────
 
     def record_feedback(
