@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
+from two_brain_audit.integrations.github import GitHubIntegration
+from two_brain_audit.integrations.ollama import OllamaIntegration
+from two_brain_audit.integrations.pypi import PyPIIntegration
+from two_brain_audit.integrations.semgrep import SemgrepIntegration
+
 
 class Integration(Protocol):
     """Protocol that all integrations must satisfy.
@@ -24,3 +29,6 @@ class Integration(Protocol):
         Each callable should return (score: float, detail: dict).
         """
         ...
+
+
+__all__ = ["Integration", "GitHubIntegration", "OllamaIntegration", "PyPIIntegration", "SemgrepIntegration"]
