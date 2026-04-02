@@ -32,23 +32,27 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_reg.add_argument("--db", default="audit.db")
     p_reg.add_argument("--baseline", default="audit_baseline.json")
+    p_reg.add_argument("--target", "-t", default=".", help="Target project directory (default: CWD)")
 
     # ── run ───────────────────────────────────────────────────────────
     p_run = sub.add_parser("run", help="Run an audit tier")
     p_run.add_argument("tier", choices=["light", "medium", "daily", "weekly"])
     p_run.add_argument("--db", default="audit.db")
     p_run.add_argument("--baseline", default="audit_baseline.json")
+    p_run.add_argument("--target", "-t", default=".", help="Target project directory (default: CWD)")
 
     # ── status ────────────────────────────────────────────────────────
     p_status = sub.add_parser("status", help="Show latest scores and divergences")
     p_status.add_argument("--db", default="audit.db")
     p_status.add_argument("--baseline", default="audit_baseline.json")
     p_status.add_argument("--json", action="store_true", help="Output as JSON")
+    p_status.add_argument("--target", "-t", default=".", help="Target project directory (default: CWD)")
 
     # ── health ────────────────────────────────────────────────────────
     p_health = sub.add_parser("health", help="Quick health check (CI-friendly)")
     p_health.add_argument("--db", default="audit.db")
     p_health.add_argument("--baseline", default="audit_baseline.json")
+    p_health.add_argument("--target", "-t", default=".", help="Target project directory (default: CWD)")
 
     # ── export ────────────────────────────────────────────────────────
     p_export = sub.add_parser("export", help="Export scores as JSON/CSV/Markdown")
@@ -81,7 +85,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "init":
         return _cmd_init(args)
 
-    engine = AuditEngine(db_path=args.db, baseline_path=args.baseline)
+    target = getattr(args, "target", ".")
+    engine = AuditEngine(db_path=args.db, baseline_path=args.baseline, target_path=target)
 
     if args.command == "register":
         return _cmd_register(engine, args)

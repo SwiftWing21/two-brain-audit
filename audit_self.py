@@ -9,7 +9,7 @@ sys.path.insert(0, "src")
 from two_brain_audit import AuditEngine, Dimension, Tier
 
 ROOT = Path(__file__).parent
-engine = AuditEngine(db_path="self_audit.db", baseline_path="self_baseline.json")
+engine = AuditEngine(db_path="self_audit.db", baseline_path="self_baseline.json", target_path=str(ROOT))
 
 
 def check_tests() -> tuple[float, dict]:

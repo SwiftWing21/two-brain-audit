@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -75,9 +77,13 @@ class AuditEngine:
     baseline_path: str = "audit_baseline.json"
     divergence_threshold: float = DIVERGENCE_THRESHOLD
     confidence_floor: float = CONFIDENCE_FLOOR
+    target_path: str = "."
     _dimensions: dict[str, Dimension] = field(default_factory=dict, init=False, repr=False)
     _db: AuditDB | None = field(default=None, init=False, repr=False)
     _sidecar: Sidecar | None = field(default=None, init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        self.target_path = str(Path(self.target_path).resolve())
 
     @property
     def db(self) -> AuditDB:
@@ -125,52 +131,57 @@ class AuditEngine:
         results: list[DimensionResult] = []
         ts = time.strftime("%Y-%m-%dT%H:%M:%S")
 
-        for name, dim in self._dimensions.items():
-            if not tier.includes(dim.tier):
-                continue
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(self.target_path)
+            for name, dim in self._dimensions.items():
+                if not tier.includes(dim.tier):
+                    continue
 
-            try:
-                auto_score, auto_detail = dim.check()
-                auto_score = max(0.0, min(1.0, auto_score))
-            except Exception as exc:
-                log.warning("Dimension %s check failed: %s", name, exc)
-                auto_score = 0.0
-                auto_detail = {"error": str(exc)}
+                try:
+                    auto_score, auto_detail = dim.check()
+                    auto_score = max(0.0, min(1.0, auto_score))
+                except Exception as exc:
+                    log.warning("Dimension %s check failed: %s", name, exc)
+                    auto_score = 0.0
+                    auto_detail = {"error": str(exc)}
 
-            # Manual grade from sidecar
-            manual_entry = baseline.get("dimensions", {}).get(name, {})
-            manual_grade = manual_entry.get("grade")
-            manual_score = grade_to_score(manual_grade) if manual_grade else None
+                # Manual grade from sidecar
+                manual_entry = baseline.get("dimensions", {}).get(name, {})
+                manual_grade = manual_entry.get("grade")
+                manual_score = grade_to_score(manual_grade) if manual_grade else None
 
-            # Divergence detection
-            divergent = False
-            if manual_score is not None and dim.confidence >= self.confidence_floor:
-                divergent = abs(auto_score - manual_score) > self.divergence_threshold
+                # Divergence detection
+                divergent = False
+                if manual_score is not None and dim.confidence >= self.confidence_floor:
+                    divergent = abs(auto_score - manual_score) > self.divergence_threshold
 
-            # Check if previously acknowledged
-            acknowledged = self.db.is_acknowledged(name)
+                # Check if previously acknowledged
+                acknowledged = self.db.is_acknowledged(name)
 
-            # Ratchet enforcement
-            ratchet_grade = self.sidecar.get_ratchet(name)
-            ratchet_violation = check_ratchet(name, auto_score, ratchet_grade)
+                # Ratchet enforcement
+                ratchet_grade = self.sidecar.get_ratchet(name)
+                ratchet_violation = check_ratchet(name, auto_score, ratchet_grade)
 
-            result = DimensionResult(
-                name=name,
-                auto_score=auto_score,
-                auto_detail=auto_detail,
-                auto_confidence=dim.confidence,
-                manual_grade=manual_grade,
-                manual_score=manual_score,
-                divergent=divergent,
-                acknowledged=acknowledged,
-                tier=tier.value,
-                timestamp=ts,
-                ratchet_violation=ratchet_violation,
-            )
-            results.append(result)
+                result = DimensionResult(
+                    name=name,
+                    auto_score=auto_score,
+                    auto_detail=auto_detail,
+                    auto_confidence=dim.confidence,
+                    manual_grade=manual_grade,
+                    manual_score=manual_score,
+                    divergent=divergent,
+                    acknowledged=acknowledged,
+                    tier=tier.value,
+                    timestamp=ts,
+                    ratchet_violation=ratchet_violation,
+                )
+                results.append(result)
 
-            # Persist
-            self.db.write_score(result)
+                # Persist
+                self.db.write_score(result)
+        finally:
+            os.chdir(old_cwd)
 
         return results
 
@@ -182,13 +193,17 @@ class AuditEngine:
         baseline = self.sidecar.load()
         ts = time.strftime("%Y-%m-%dT%H:%M:%S")
 
+        old_cwd = os.getcwd()
         try:
+            os.chdir(self.target_path)
             auto_score, auto_detail = dim.check()
             auto_score = max(0.0, min(1.0, auto_score))
         except Exception as exc:
             log.warning("Dimension %s check failed: %s", name, exc)
             auto_score = 0.0
             auto_detail = {"error": str(exc)}
+        finally:
+            os.chdir(old_cwd)
 
         manual_entry = baseline.get("dimensions", {}).get(name, {})
         manual_grade = manual_entry.get("grade")
