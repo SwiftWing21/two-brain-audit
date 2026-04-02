@@ -12,12 +12,14 @@ from typing import TYPE_CHECKING, Any
 
 from two_brain_audit.db import AuditDB
 from two_brain_audit.grades import grade_to_score, is_failing, score_to_grade
-from two_brain_audit.reconciler import check_ratchet, classify_status
+from two_brain_audit.reconciler import check_ratchet, classify_status, classify_status_rich
 from two_brain_audit.sidecar import Sidecar
 from two_brain_audit.tiers import DEFAULT_SCHEDULES, Tier
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from two_brain_audit.claims import Divergence
 
 # Lock to prevent concurrent os.chdir races in run_tier/run_dimension
 _chdir_lock = threading.Lock()
@@ -64,6 +66,7 @@ class DimensionResult:
     tier: str
     timestamp: str = ""
     ratchet_violation: dict[str, Any] | None = None
+    divergence_detail: "Divergence | None" = None
 
 
 @dataclass
@@ -164,6 +167,16 @@ class AuditEngine:
                     ratchet_grade = self.sidecar.get_ratchet(name)
                     ratchet_violation = check_ratchet(name, auto_score, ratchet_grade)
 
+                    # Rich divergence detail
+                    manual_evidence = manual_entry.get("notes", "")
+                    _status_rich, divergence_detail = classify_status_rich(
+                        auto_score, manual_score, dim.confidence, name,
+                        auto_evidence=str(auto_detail),
+                        manual_evidence=manual_evidence,
+                        divergence_threshold=self.divergence_threshold,
+                        confidence_floor=self.confidence_floor,
+                    )
+
                     result = DimensionResult(
                         name=name,
                         auto_score=auto_score,
@@ -176,6 +189,7 @@ class AuditEngine:
                         tier=tier.value,
                         timestamp=ts,
                         ratchet_violation=ratchet_violation,
+                        divergence_detail=divergence_detail,
                     )
                     results.append(result)
                     self.db.write_score(result)
@@ -214,6 +228,16 @@ class AuditEngine:
         )
         divergent = status in ("warn", "fail")
 
+        # Rich divergence detail
+        manual_evidence = manual_entry.get("notes", "")
+        _status_rich, divergence_detail = classify_status_rich(
+            auto_score, manual_score, dim.confidence, name,
+            auto_evidence=str(auto_detail),
+            manual_evidence=manual_evidence,
+            divergence_threshold=self.divergence_threshold,
+            confidence_floor=self.confidence_floor,
+        )
+
         result = DimensionResult(
             name=name,
             auto_score=auto_score,
@@ -225,6 +249,7 @@ class AuditEngine:
             acknowledged=self.db.is_acknowledged(name),
             tier="single",
             timestamp=ts,
+            divergence_detail=divergence_detail,
         )
         self.db.write_score(result)
         return result
@@ -367,6 +392,19 @@ class AuditEngine:
                 log.info("Scheduled %s tier triggered", sched.tier.value)
                 return self.run_tier(sched.tier)
         return None
+
+    # ── Tension Map ──────────────────────────────────────────────────
+
+    def tension_report(self) -> str:
+        """Generate a Tension Map from the latest scores."""
+        from two_brain_audit.claims import tension_report as _tension_report
+
+        scores = self.latest_scores()
+        divergences = [
+            r.divergence_detail for r in scores
+            if r.divergence_detail is not None
+        ]
+        return _tension_report(divergences)
 
     # ── Lifecycle ────────────────────────────────────────────────────
 

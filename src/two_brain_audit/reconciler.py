@@ -5,6 +5,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from two_brain_audit.claims import (
+    Claim,
+    Divergence,
+    classify_divergence,
+)
 from two_brain_audit.grades import grade_to_score, is_failing
 
 log = logging.getLogger("two_brain_audit")
@@ -69,3 +74,62 @@ def classify_status(
             return "warn"
         return "review_suggested"
     return "ok"
+
+
+def classify_status_rich(
+    auto_score: float,
+    manual_score: float | None,
+    confidence: float,
+    dimension_name: str,
+    *,
+    auto_evidence: str = "",
+    manual_evidence: str = "",
+    file_path: str | None = None,
+    last_review_timestamp: str | None = None,
+    last_commit_timestamp: str | None = None,
+    divergence_threshold: float = 0.15,
+    confidence_floor: float = 0.5,
+) -> tuple[str, Divergence | None]:
+    """Enhanced classify_status that also returns a typed Divergence.
+
+    Returns (status_string, divergence_or_none) where status_string is
+    the same "ok"/"warn"/"review_suggested"/"fail" as classify_status().
+    The Divergence provides gap_type, severity, and explanation.
+    """
+    status = classify_status(
+        auto_score, manual_score, confidence,
+        divergence_threshold, confidence_floor,
+    )
+
+    if manual_score is None:
+        return status, None
+
+    auto_claim = Claim(
+        source="auto",
+        dimension=dimension_name,
+        statement=f"Auto score: {auto_score:.2f}",
+        confidence=auto_score,
+        evidence=auto_evidence,
+        file_path=file_path,
+    )
+    manual_claim = Claim(
+        source="manual",
+        dimension=dimension_name,
+        statement=f"Manual score: {manual_score:.2f}",
+        confidence=manual_score,
+        evidence=manual_evidence,
+        file_path=file_path,
+    )
+
+    try:
+        divergence = classify_divergence(
+            auto_claim,
+            manual_claim,
+            last_review_timestamp=last_review_timestamp,
+            last_commit_timestamp=last_commit_timestamp,
+        )
+    except Exception:
+        log.warning("Failed to classify divergence for %s", dimension_name, exc_info=True)
+        divergence = None
+
+    return status, divergence
