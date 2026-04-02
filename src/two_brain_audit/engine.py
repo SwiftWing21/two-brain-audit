@@ -12,8 +12,9 @@ if TYPE_CHECKING:
 
 from two_brain_audit.db import AuditDB
 from two_brain_audit.grades import grade_to_score, is_failing, score_to_grade
+from two_brain_audit.reconciler import check_ratchet
 from two_brain_audit.sidecar import Sidecar
-from two_brain_audit.tiers import Tier
+from two_brain_audit.tiers import DEFAULT_SCHEDULES, Tier
 
 log = logging.getLogger("two_brain_audit")
 
@@ -56,6 +57,7 @@ class DimensionResult:
     acknowledged: bool
     tier: str
     timestamp: str = ""
+    ratchet_violation: dict[str, Any] | None = None
 
 
 @dataclass
@@ -148,6 +150,10 @@ class AuditEngine:
             # Check if previously acknowledged
             acknowledged = self.db.is_acknowledged(name)
 
+            # Ratchet enforcement
+            ratchet_grade = self.sidecar.get_ratchet(name)
+            ratchet_violation = check_ratchet(name, auto_score, ratchet_grade)
+
             result = DimensionResult(
                 name=name,
                 auto_score=auto_score,
@@ -159,6 +165,7 @@ class AuditEngine:
                 acknowledged=acknowledged,
                 tier=tier.value,
                 timestamp=ts,
+                ratchet_violation=ratchet_violation,
             )
             results.append(result)
 
@@ -260,11 +267,12 @@ class AuditEngine:
         """Quick health summary for CI/smoke test integration.
 
         Returns:
-            {ok: bool, grade: str, score: float, divergences: int, failing: list[str]}
+            {ok, grade, score, divergences, failing, ratchet_violations}
         """
         scores = self.latest_scores()
         divergences = self.get_divergences()
         failing = [r.name for r in scores if is_failing(r.auto_score)]
+        ratchet_violations = [r.name for r in scores if r.ratchet_violation]
         overall = self.overall_score()
 
         return {
@@ -273,4 +281,31 @@ class AuditEngine:
             "score": round(overall, 3),
             "divergences": len(divergences),
             "failing": failing,
+            "ratchet_violations": ratchet_violations,
         }
+
+    # ── Scheduling ───────────────────────────────────────────────────
+
+    def run_scheduled(self, *, hour: int, minute: int, weekday: int) -> list[DimensionResult] | None:
+        """Run the tier matching the current schedule, if any.
+
+        Called by external schedulers (cron, Task Scheduler, or Studio).
+        Returns results if a tier matched, None otherwise.
+        """
+        for sched in DEFAULT_SCHEDULES:
+            if sched.matches(hour=hour, minute=minute, weekday=weekday):
+                log.info("Scheduled %s tier triggered", sched.tier.value)
+                return self.run_tier(sched.tier)
+        return None
+
+    # ── Lifecycle ────────────────────────────────────────────────────
+
+    def close(self) -> None:
+        """Close DB connections and release resources."""
+        if self._db is not None:
+            try:
+                conn = self._db._get_conn()
+                conn.close()
+            except Exception:
+                log.debug("Error closing DB connection", exc_info=True)
+            self._db = None
