@@ -8,6 +8,7 @@ from two_brain_audit.reviewers.providers import (
     ClaudeProvider,
     GeminiProvider,
     OpenAIProvider,
+    ReviewResult,
     _calc_cost,
     _parse_review_json,
 )
@@ -172,3 +173,89 @@ class TestBudgetGuard:
         bg = BudgetGuard(max_usd=0.03)
         # default estimated_cost=0.05 exceeds 0.03
         assert bg.check() is False
+
+
+# ── Cross-validation tests ──────────────────────────────────────────
+
+
+class TestCrossValidation:
+    """Test _cross_validate from oss_review."""
+
+    def _make_result(self, findings: list[str], score: float = 0.8) -> ReviewResult:
+        return ReviewResult(
+            grade="B+",
+            score=score,
+            confidence=0.8,
+            findings=findings,
+            recommendations=[],
+            model="test",
+            provider="test",
+        )
+
+    def test_overlapping_findings_cross_validated(self):
+        from two_brain_audit.reviewers.oss_review import _cross_validate
+
+        lens_results = {
+            "security_auditor": self._make_result(["SQL injection risk", "Missing auth"]),
+            "performance_engineer": self._make_result(["SQL injection risk", "N+1 query"]),
+        }
+        cross, single = _cross_validate(lens_results)
+        # "SQL injection risk" appears in both lenses
+        normalized_cross = [f.lower().strip().rstrip(".") for f in cross]
+        assert "sql injection risk" in normalized_cross
+        assert len(cross) == 1
+        # "Missing auth" and "N+1 query" are single-source
+        single_findings = [s["finding"] for s in single]
+        assert "Missing auth" in single_findings
+        assert "N+1 query" in single_findings
+
+    def test_single_source_has_lens_attribution(self):
+        from two_brain_audit.reviewers.oss_review import _cross_validate
+
+        lens_results = {
+            "security_auditor": self._make_result(["Hardcoded secret"]),
+            "software_architect": self._make_result(["High coupling"]),
+        }
+        cross, single = _cross_validate(lens_results)
+        assert len(cross) == 0
+        assert len(single) == 2
+        lenses = {s["lens"] for s in single}
+        assert "security_auditor" in lenses
+        assert "software_architect" in lenses
+
+    def test_normalized_dedup_case_insensitive(self):
+        from two_brain_audit.reviewers.oss_review import _cross_validate
+
+        lens_results = {
+            "security_auditor": self._make_result(["SQL Injection Risk."]),
+            "compliance_auditor": self._make_result(["sql injection risk"]),
+        }
+        cross, single = _cross_validate(lens_results)
+        # Same finding after normalization -> cross-validated
+        assert len(cross) == 1
+        assert len(single) == 0
+
+    def test_all_unique_findings(self):
+        from two_brain_audit.reviewers.oss_review import _cross_validate
+
+        lens_results = {
+            "security_auditor": self._make_result(["Finding A"]),
+            "performance_engineer": self._make_result(["Finding B"]),
+            "software_architect": self._make_result(["Finding C"]),
+        }
+        cross, single = _cross_validate(lens_results)
+        assert len(cross) == 0
+        assert len(single) == 3
+
+
+class TestConsensusReviewEdgeCases:
+    """Test consensus_review with no providers."""
+
+    def test_empty_providers_returns_error(self):
+        from two_brain_audit.reviewers.consensus import consensus_review
+
+        result = consensus_review("security", "some context", providers=[])
+        assert result["consensus_score"] == 0.0
+        assert "error" in result
+        assert "No API keys" in result["error"]
+        assert result["provider_results"] == {}
