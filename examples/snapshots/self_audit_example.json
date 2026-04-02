@@ -1,0 +1,74 @@
+{
+  "health": {
+    "ok": false,
+    "grade": "A-",
+    "score": 0.817,
+    "divergences": 1,
+    "failing": [
+      "type_coverage"
+    ],
+    "ratchet_violations": []
+  },
+  "dimensions": [
+    {
+      "name": "complexity",
+      "auto_score": 1.0,
+      "auto_confidence": 0.8,
+      "manual_grade": null,
+      "divergent": false,
+      "tier": "medium",
+      "timestamp": "2026-04-02T14:49:56"
+    },
+    {
+      "name": "doc_coverage",
+      "auto_score": 0.5132963988919668,
+      "auto_confidence": 0.8,
+      "manual_grade": null,
+      "divergent": false,
+      "tier": "medium",
+      "timestamp": "2026-04-02T14:49:56"
+    },
+    {
+      "name": "import_hygiene",
+      "auto_score": 0.97,
+      "auto_confidence": 0.85,
+      "manual_grade": null,
+      "divergent": false,
+      "tier": "medium",
+      "timestamp": "2026-04-02T14:49:56"
+    },
+    {
+      "name": "lint_score",
+      "auto_score": 0.92,
+      "auto_confidence": 0.9,
+      "manual_grade": null,
+      "divergent": false,
+      "tier": "medium",
+      "timestamp": "2026-04-02T14:49:56"
+    },
+    {
+      "name": "test_coverage",
+      "auto_score": 1.0,
+      "auto_confidence": 0.95,
+      "manual_grade": null,
+      "divergent": false,
+      "tier": "medium",
+      "timestamp": "2026-04-02T14:49:56"
+    },
+    {
+      "name": "type_coverage",
+      "auto_score": 0.5,
+      "auto_confidence": 0.85,
+      "manual_grade": null,
+      "divergent": true,
+      "tier": "medium",
+      "timestamp": "2026-04-02T14:49:56"
+    }
+  ],
+  "feedback": {
+    "count": 0,
+    "avg_score": null,
+    "min_score": null,
+    "max_score": null
+  }
+}

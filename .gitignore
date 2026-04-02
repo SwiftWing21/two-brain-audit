@@ -34,6 +34,9 @@ coverage.xml
 audit_baseline.json
 demo_baseline.json
 
+# Snapshots
+audit-snapshots/
+
 # OS
 .DS_Store
 Thumbs.db

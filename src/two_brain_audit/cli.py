@@ -58,8 +58,16 @@ def main(argv: list[str] | None = None) -> int:
     p_export = sub.add_parser("export", help="Export scores as JSON/CSV/Markdown")
     p_export.add_argument("format", choices=["json", "csv", "markdown"])
     p_export.add_argument("--output", "-o", help="Output file path (default: stdout)")
+    p_export.add_argument("--snapshot", action="store_true", help="Write timestamped snapshot to audit-snapshots/")
+    p_export.add_argument("--no-sanitize", action="store_true", help="Disable sanitization for snapshot export")
     p_export.add_argument("--db", default="audit.db")
     p_export.add_argument("--baseline", default="audit_baseline.json")
+
+    # ── snapshot ─────────────────────────────────────────────────────
+    p_snap = sub.add_parser("snapshot", help="Manage audit snapshots")
+    p_snap_sub = p_snap.add_subparsers(dest="snapshot_command")
+    p_snap_list = p_snap_sub.add_parser("list", help="List snapshot manifest entries")
+    p_snap_list.add_argument("--dir", default="audit-snapshots", help="Snapshot directory")
 
     # ── dashboard ─────────────────────────────────────────────────────
     p_dash = sub.add_parser("dashboard", help="Start the web dashboard")
@@ -84,6 +92,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "init":
         return _cmd_init(args)
+
+    if args.command == "snapshot":
+        return _cmd_snapshot(args)
 
     target = getattr(args, "target", ".")
     engine = AuditEngine(db_path=args.db, baseline_path=args.baseline, target_path=target)
@@ -213,6 +224,14 @@ def _cmd_health(engine: AuditEngine, args: argparse.Namespace) -> int:
 
 
 def _cmd_export(engine: AuditEngine, args: argparse.Namespace) -> int:
+    if getattr(args, "snapshot", False):
+        from two_brain_audit.snapshot import export_snapshot
+
+        sanitize_output = not getattr(args, "no_sanitize", False)
+        path = export_snapshot(engine, fmt=args.format, sanitize_output=sanitize_output)
+        print(f"Snapshot written: {path}")
+        return 0
+
     from two_brain_audit.exporters import export_csv, export_json, export_markdown
 
     exporters = {"json": export_json, "csv": export_csv, "markdown": export_markdown}
@@ -221,6 +240,28 @@ def _cmd_export(engine: AuditEngine, args: argparse.Namespace) -> int:
         print(output)
     else:
         print(f"Exported to {args.output}")
+    return 0
+
+
+def _cmd_snapshot(args: argparse.Namespace) -> int:
+    from two_brain_audit.snapshot import list_snapshots
+
+    sub = getattr(args, "snapshot_command", None)
+    if sub == "list":
+        entries = list_snapshots(output_dir=args.dir)
+        if not entries:
+            print("No snapshots found.")
+            return 0
+        for entry in entries:
+            sanitized = "sanitized" if entry.get("sanitized") else "raw"
+            print(
+                f"  {entry['file']:40s}  {entry.get('overall_grade', '?'):>3s}"
+                f"  ({entry.get('overall_score', 0):.3f})  {entry.get('dimensions_count', 0)} dims"
+                f"  [{sanitized}]  {entry.get('timestamp', '')}"
+            )
+        return 0
+
+    print("Usage: two-brain-audit snapshot list [--dir DIR]")
     return 0
 
 
