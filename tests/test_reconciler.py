@@ -1,6 +1,6 @@
 """Tests for reconciliation logic."""
 
-from two_brain_audit.reconciler import check_ratchet, classify_status, merge_weekly_score
+from scorerift.reconciler import check_ratchet, classify_status, merge_weekly_score
 
 
 class TestMergeWeeklyScore:

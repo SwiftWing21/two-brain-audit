@@ -1,7 +1,7 @@
 """Tests for preset dimension configurations."""
 
-from two_brain_audit import Dimension
-from two_brain_audit.presets import PRESETS
+from scorerift import Dimension
+from scorerift.presets import PRESETS
 
 
 class TestPresetsStructure:
@@ -29,7 +29,7 @@ class TestPresetsStructure:
                 assert callable(d.check), f"{preset_name}.{d.name} check is not callable"
 
     def test_all_dimensions_have_tier(self):
-        from two_brain_audit.tiers import Tier
+        from scorerift.tiers import Tier
         for preset_name, dims in PRESETS.items():
             for d in dims:
                 assert isinstance(d.tier, Tier), f"{preset_name}.{d.name} tier is not Tier"

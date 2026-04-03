@@ -1,4 +1,4 @@
-# Two-Brain Audit
+# ScoreRift
 
 **The product isn't the scoring. It's watching the gap.**
 
@@ -43,12 +43,12 @@ When both brains agree, everything's fine — move on. When they disagree, somet
 ## Quick Start
 
 ```bash
-pip install two-brain-audit
+pip install scorerift
 
-two-brain-audit init                      # create DB + baseline sidecar
-two-brain-audit register --preset python  # 8 dimensions for Python projects
-two-brain-audit run light                 # first scan (~2s)
-two-brain-audit status                    # view scores + divergences
+scorerift init                      # create DB + baseline sidecar
+scorerift register --preset python  # 8 dimensions for Python projects
+scorerift run light                 # first scan (~2s)
+scorerift status                    # view scores + divergences
 ```
 
 ```
@@ -103,7 +103,7 @@ Every check handles missing tools gracefully (returns 0.5 with a note, not a cra
 
 ## Wrap Your Existing Tools
 
-Two-Brain Audit doesn't replace your tooling. It sits on top of it.
+ScoreRift doesn't replace your tooling. It sits on top of it.
 
 A dimension's `check` is just `Callable[[], tuple[float, dict]]`. That callable can hit any API, parse any CLI output, or query any system. The framework doesn't care where the score comes from — it just needs a number between 0 and 1, and a detail dict.
 
@@ -195,9 +195,9 @@ export OPENAI_API_KEY=sk-...
 ## Web Dashboard
 
 ```bash
-pip install two-brain-audit[dashboard]
-two-brain-audit dashboard                 # http://localhost:8484/audit/
-two-brain-audit dashboard --native        # PyWebView native window
+pip install scorerift[dashboard]
+scorerift dashboard                 # http://localhost:8484/audit/
+scorerift dashboard --native        # PyWebView native window
 ```
 
 Grade ring, score bars, divergence alerts, tier triggers, feedback widget, review tracking. Self-contained HTML, zero CDN dependencies.
@@ -207,7 +207,7 @@ Grade ring, score bars, divergence alerts, tier triggers, feedback widget, revie
 ## Python API
 
 ```python
-from two_brain_audit import AuditEngine, Dimension, Tier
+from scorerift import AuditEngine, Dimension, Tier
 
 engine = AuditEngine(db_path="audit.db", baseline_path="audit_baseline.json")
 
@@ -231,8 +231,8 @@ for d in engine.get_divergences():
 ```yaml
 - name: Audit health check
   run: |
-    pip install two-brain-audit
-    two-brain-audit health
+    pip install scorerift
+    scorerift health
 ```
 
 Exit code 0 = aligned. Exit code 1 = divergences or failing dimensions. The JSON output tells you exactly what disagrees and by how much.
@@ -249,7 +249,7 @@ Exit code 0 = aligned. Exit code 1 = divergences or failing dimensions. The JSON
 
 ## Dogfooding: TBR Auditing Itself
 
-We ran two-brain-audit on its own codebase. Here's what happened.
+We ran scorerift on its own codebase. Here's what happened.
 
 **Step 1: Auto-scorer says everything is perfect.**
 
@@ -307,7 +307,7 @@ This is the entire product thesis in one example: **neither brain alone is suffi
 
 ## Desktop GUI
 
-[Two-Brain Studio](https://github.com/SwiftWing21/two-brain-studio) — native desktop app for configuring, running, and reviewing audits without the CLI. Open any folder, pick a preset, run audits, edit manual grades, export reports.
+[ScoreRift Studio](https://github.com/SwiftWing21/scorerift-studio) — native desktop app for configuring, running, and reviewing audits without the CLI. Open any folder, pick a preset, run audits, edit manual grades, export reports.
 
 ## Origin
 

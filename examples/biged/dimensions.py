@@ -26,7 +26,7 @@ Auto-confidence per dimension:
 
 from __future__ import annotations
 
-from two_brain_audit import Dimension, Tier
+from scorerift import Dimension, Tier
 
 # ── Confidence Map ───────────────────────────────────────────────────
 

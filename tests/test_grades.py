@@ -1,6 +1,6 @@
 """Tests for grade scale conversion."""
 
-from two_brain_audit.grades import grade_to_score, is_failing, score_to_grade
+from scorerift.grades import grade_to_score, is_failing, score_to_grade
 
 
 class TestGradeToScore:

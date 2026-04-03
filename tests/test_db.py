@@ -2,7 +2,7 @@
 
 import pytest
 
-from two_brain_audit.db import AuditDB
+from scorerift.db import AuditDB
 
 
 @pytest.fixture
@@ -33,7 +33,7 @@ class TestAuditDB:
         assert db.is_acknowledged("nonexistent") is False
 
     def test_write_score_roundtrip(self, db):
-        from two_brain_audit.engine import DimensionResult
+        from scorerift.engine import DimensionResult
         result = DimensionResult(
             name="test_dim", auto_score=0.85, auto_detail={"ok": True},
             auto_confidence=0.9, manual_grade="A", manual_score=0.9,
@@ -48,7 +48,7 @@ class TestAuditDB:
         assert scores[0].manual_grade == "A"
 
     def test_score_history_filter(self, db):
-        from two_brain_audit.engine import DimensionResult
+        from scorerift.engine import DimensionResult
         for name, score in [("alpha", 0.9), ("beta", 0.7)]:
             db.write_score(DimensionResult(
                 name=name, auto_score=score, auto_detail={},

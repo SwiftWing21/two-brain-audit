@@ -7,17 +7,17 @@ Get a working audit system in under 5 minutes.
 ## 1. Install
 
 ```bash
-pip install two-brain-audit
+pip install scorerift
 ```
 
 For the web dashboard:
 ```bash
-pip install two-brain-audit[dashboard]
+pip install scorerift[dashboard]
 ```
 
 For all integrations (GitHub, semgrep, PyPI):
 ```bash
-pip install two-brain-audit[all]
+pip install scorerift[all]
 ```
 
 ---
@@ -25,7 +25,7 @@ pip install two-brain-audit[all]
 ## 2. Initialize
 
 ```bash
-two-brain-audit init
+scorerift init
 ```
 
 This creates:
@@ -40,25 +40,25 @@ Pick a preset that matches your project type:
 
 ```bash
 # Python project (test coverage, lint, types, deps, security, complexity, docs, imports)
-two-brain-audit register --preset python
+scorerift register --preset python
 
 # REST API (endpoints, latency, errors, auth, schema, rate limits, CORS, TLS)
-two-brain-audit register --preset api
+scorerift register --preset api
 
 # Database (schema, indexes, queries, backups, replication, pool, migrations)
-two-brain-audit register --preset database
+scorerift register --preset database
 
 # Infrastructure (uptime, certs, resources, config drift, secrets, DNS, CDN, containers)
-two-brain-audit register --preset infrastructure
+scorerift register --preset infrastructure
 
 # ML Pipeline (model freshness, data drift, latency, accuracy, features, GPU, experiments)
-two-brain-audit register --preset ml_pipeline
+scorerift register --preset ml_pipeline
 ```
 
 Or register custom dimensions in Python:
 
 ```python
-from two_brain_audit import AuditEngine, Dimension, Tier
+from scorerift import AuditEngine, Dimension, Tier
 
 engine = AuditEngine()
 
@@ -76,13 +76,13 @@ engine.register(Dimension(
 
 ```bash
 # Light tier — fast, deterministic counts (~2s)
-two-brain-audit run light
+scorerift run light
 
 # Medium tier — adds health probes and analysis (~10s)
-two-brain-audit run medium
+scorerift run medium
 
 # See results
-two-brain-audit status
+scorerift status
 ```
 
 Output:
@@ -127,7 +127,7 @@ Edit `audit_baseline.json` directly:
 Now the system compares both brains. If they disagree by more than 15% (and auto-confidence is high enough), a **divergence** is flagged:
 
 ```bash
-two-brain-audit status
+scorerift status
 ```
 ```
   security                 0.500      D     A-   DIVERGED
@@ -149,14 +149,14 @@ Three options:
 **B. Acknowledge** — you disagree with auto but don't want to be nagged:
 ```bash
 # CLI
-two-brain-audit acknowledge security
+scorerift acknowledge security
 
 # Or via dashboard button
 ```
 
 **C. Re-audit** — re-run the check to see if it resolves:
 ```bash
-two-brain-audit run daily
+scorerift run daily
 ```
 
 ---
@@ -181,7 +181,7 @@ If `test_coverage` drops below A (0.90), the system flags a warning. Ratchets ar
 ## 8. Web Dashboard
 
 ```bash
-two-brain-audit dashboard
+scorerift dashboard
 # Opens at http://localhost:8484/audit/
 ```
 
@@ -200,13 +200,13 @@ Auto-refreshes every 30 seconds. Zero external dependencies.
 
 ```bash
 # Markdown (great for PRs and docs)
-two-brain-audit export markdown -o audit_report.md
+scorerift export markdown -o audit_report.md
 
 # JSON (for CI pipelines)
-two-brain-audit export json -o audit_report.json
+scorerift export json -o audit_report.json
 
 # CSV (for spreadsheets)
-two-brain-audit export csv -o audit_report.csv
+scorerift export csv -o audit_report.csv
 ```
 
 ---
@@ -219,8 +219,8 @@ Add to your CI pipeline:
 # GitHub Actions example
 - name: Audit health check
   run: |
-    pip install two-brain-audit
-    two-brain-audit health
+    pip install scorerift
+    scorerift health
 ```
 
 Exit code 0 = healthy, 1 = failing dimensions or unresolved divergences.
@@ -243,7 +243,7 @@ The JSON output is machine-readable:
 For programmatic use:
 
 ```python
-from two_brain_audit import AuditEngine, Dimension, Tier
+from scorerift import AuditEngine, Dimension, Tier
 
 # Create engine
 engine = AuditEngine(db_path="audit.db", baseline_path="audit_baseline.json")
@@ -268,7 +268,7 @@ if not health["ok"]:
 engine.record_feedback(score=0.8, text="Dashboard feels snappy today")
 
 # Export
-from two_brain_audit.exporters import export_markdown
+from scorerift.exporters import export_markdown
 print(export_markdown(engine))
 ```
 
@@ -280,8 +280,8 @@ Drop the dashboard into any existing Flask app:
 
 ```python
 from flask import Flask
-from two_brain_audit import AuditEngine
-from two_brain_audit.dashboard import create_blueprint
+from scorerift import AuditEngine
+from scorerift.dashboard import create_blueprint
 
 app = Flask(__name__)
 engine = AuditEngine()

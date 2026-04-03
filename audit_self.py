@@ -1,4 +1,4 @@
-"""Self-audit — two-brain-audit auditing itself."""
+"""Self-audit — scorerift auditing itself."""
 import subprocess
 import sys
 import re
@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, "src")
 
-from two_brain_audit import AuditEngine, Dimension, Tier
+from scorerift import AuditEngine, Dimension, Tier
 
 ROOT = Path(__file__).parent
 engine = AuditEngine(db_path="self_audit.db", baseline_path="self_baseline.json", target_path=str(ROOT))
@@ -37,7 +37,7 @@ def check_lint() -> tuple[float, dict]:
 
 
 def check_type_coverage() -> tuple[float, dict]:
-    py_typed = (ROOT / "src" / "two_brain_audit" / "py.typed").exists()
+    py_typed = (ROOT / "src" / "scorerift" / "py.typed").exists()
     py_files = list((ROOT / "src").rglob("*.py"))
     annotated = total_funcs = 0
     for f in py_files:
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     print("Running self-audit (medium tier)...\n")
     results = engine.run_tier("medium")
 
-    from two_brain_audit.grades import score_to_grade
+    from scorerift.grades import score_to_grade
 
     print(f"{'Dimension':20s}  {'Score':>6s}  {'Grade':>5s}  Detail")
     print("-" * 75)
@@ -145,5 +145,5 @@ if __name__ == "__main__":
     print(f"\nOverall: {score_to_grade(overall)} ({overall:.3f})")
 
     print("\nLaunching dashboard...")
-    from two_brain_audit.app import launch
-    launch(engine, title="Two-Brain Audit - Self-Audit")
+    from scorerift.app import launch
+    launch(engine, title="ScoreRift - Self-Audit")

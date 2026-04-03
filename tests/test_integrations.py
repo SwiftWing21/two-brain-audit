@@ -6,10 +6,10 @@ import json
 import subprocess
 from unittest.mock import MagicMock, patch
 
-from two_brain_audit.integrations.github import GitHubIntegration
-from two_brain_audit.integrations.ollama import OllamaIntegration
-from two_brain_audit.integrations.pypi import PyPIIntegration
-from two_brain_audit.integrations.semgrep import SemgrepIntegration
+from scorerift.integrations.github import GitHubIntegration
+from scorerift.integrations.ollama import OllamaIntegration
+from scorerift.integrations.pypi import PyPIIntegration
+from scorerift.integrations.semgrep import SemgrepIntegration
 
 # ── GitHub ──────────────────────────────────────────────────────────
 

@@ -2,7 +2,7 @@
 import sys
 sys.path.insert(0, "src")
 
-from two_brain_audit import AuditEngine, Dimension, Tier
+from scorerift import AuditEngine, Dimension, Tier
 
 engine = AuditEngine(db_path="demo_audit.db", baseline_path="demo_baseline.json")
 
@@ -28,5 +28,5 @@ engine.run_tier("medium")
 print("Seeded DB with scores")
 
 # Launch in native window (falls back to browser if pywebview missing)
-from two_brain_audit.app import launch
+from scorerift.app import launch
 launch(engine)

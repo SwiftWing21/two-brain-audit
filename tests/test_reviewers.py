@@ -2,9 +2,9 @@
 
 import logging
 
-from two_brain_audit.reviewers.budget import BudgetGuard
-from two_brain_audit.reviewers.cache import ReviewCache
-from two_brain_audit.reviewers.providers import (
+from scorerift.reviewers.budget import BudgetGuard
+from scorerift.reviewers.cache import ReviewCache
+from scorerift.reviewers.providers import (
     ClaudeProvider,
     GeminiProvider,
     OpenAIProvider,
@@ -113,27 +113,27 @@ class TestProviderRepr:
 
 class TestKeyFormatWarning:
     def test_claude_warns_on_bad_prefix(self, caplog):
-        with caplog.at_level(logging.WARNING, logger="two_brain_audit.reviewers"):
+        with caplog.at_level(logging.WARNING, logger="scorerift.reviewers"):
             ClaudeProvider(api_key="bad-key-format-xxxxxxxx")
         assert "unexpected format" in caplog.text
 
     def test_claude_no_warn_on_good_prefix(self, caplog):
-        with caplog.at_level(logging.WARNING, logger="two_brain_audit.reviewers"):
+        with caplog.at_level(logging.WARNING, logger="scorerift.reviewers"):
             ClaudeProvider(api_key="sk-ant-valid-key-here")
         assert "unexpected format" not in caplog.text
 
     def test_gemini_warns_on_bad_prefix(self, caplog):
-        with caplog.at_level(logging.WARNING, logger="two_brain_audit.reviewers"):
+        with caplog.at_level(logging.WARNING, logger="scorerift.reviewers"):
             GeminiProvider(api_key="bad-gemini-key-xxxxxx")
         assert "unexpected format" in caplog.text
 
     def test_openai_warns_on_bad_prefix(self, caplog):
-        with caplog.at_level(logging.WARNING, logger="two_brain_audit.reviewers"):
+        with caplog.at_level(logging.WARNING, logger="scorerift.reviewers"):
             OpenAIProvider(api_key="bad-openai-key-xxxxxx")
         assert "unexpected format" in caplog.text
 
     def test_no_warn_on_empty_key(self, caplog):
-        with caplog.at_level(logging.WARNING, logger="two_brain_audit.reviewers"):
+        with caplog.at_level(logging.WARNING, logger="scorerift.reviewers"):
             ClaudeProvider(api_key="")
         assert "unexpected format" not in caplog.text
 
@@ -193,7 +193,7 @@ class TestCrossValidation:
         )
 
     def test_overlapping_findings_cross_validated(self):
-        from two_brain_audit.reviewers.oss_review import _cross_validate
+        from scorerift.reviewers.oss_review import _cross_validate
 
         lens_results = {
             "security_auditor": self._make_result(["SQL injection risk", "Missing auth"]),
@@ -210,7 +210,7 @@ class TestCrossValidation:
         assert "N+1 query" in single_findings
 
     def test_single_source_has_lens_attribution(self):
-        from two_brain_audit.reviewers.oss_review import _cross_validate
+        from scorerift.reviewers.oss_review import _cross_validate
 
         lens_results = {
             "security_auditor": self._make_result(["Hardcoded secret"]),
@@ -224,7 +224,7 @@ class TestCrossValidation:
         assert "software_architect" in lenses
 
     def test_normalized_dedup_case_insensitive(self):
-        from two_brain_audit.reviewers.oss_review import _cross_validate
+        from scorerift.reviewers.oss_review import _cross_validate
 
         lens_results = {
             "security_auditor": self._make_result(["SQL Injection Risk."]),
@@ -236,7 +236,7 @@ class TestCrossValidation:
         assert len(single) == 0
 
     def test_all_unique_findings(self):
-        from two_brain_audit.reviewers.oss_review import _cross_validate
+        from scorerift.reviewers.oss_review import _cross_validate
 
         lens_results = {
             "security_auditor": self._make_result(["Finding A"]),
@@ -252,7 +252,7 @@ class TestConsensusReviewEdgeCases:
     """Test consensus_review with no providers."""
 
     def test_empty_providers_returns_error(self):
-        from two_brain_audit.reviewers.consensus import consensus_review
+        from scorerift.reviewers.consensus import consensus_review
 
         result = consensus_review("security", "some context", providers=[])
         assert result["consensus_score"] == 0.0

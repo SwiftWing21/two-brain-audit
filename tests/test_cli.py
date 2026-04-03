@@ -1,6 +1,6 @@
 """Tests for the CLI."""
 
-from two_brain_audit.cli import main
+from scorerift.cli import main
 
 
 class TestCLI:
@@ -56,9 +56,9 @@ class TestCLI:
         db = str(tmp_path / "test.db")
         baseline = str(tmp_path / "test_baseline.json")
         target = str(tmp_path)
-        # Create a minimal .two-brain-audit.json so auto-load works
+        # Create a minimal .scorerift.json so auto-load works
         import json
-        (tmp_path / ".two-brain-audit.json").write_text(
+        (tmp_path / ".scorerift.json").write_text(
             json.dumps({"preset": "python", "created": True}), encoding="utf-8"
         )
         main(["init", "--db", db, "--baseline", baseline])
@@ -71,7 +71,7 @@ class TestCLI:
         baseline = str(tmp_path / "test_baseline.json")
         main(["init", "--db", db, "--baseline", baseline])
         main(["register", "--preset", "python", "--db", db, "--baseline", baseline, "--target", str(tmp_path)])
-        config = json.loads((tmp_path / ".two-brain-audit.json").read_text())
+        config = json.loads((tmp_path / ".scorerift.json").read_text())
         assert config["preset"] == "python"
 
     def test_run_no_dimensions(self, tmp_path):

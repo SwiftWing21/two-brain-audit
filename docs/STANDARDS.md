@@ -1,6 +1,6 @@
 # Standards Reference
 
-What the two-brain-audit dimensions measure, and which external standards, frameworks, and research inform each one.
+What the scorerift dimensions measure, and which external standards, frameworks, and research inform each one.
 
 ---
 

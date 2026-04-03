@@ -4,8 +4,8 @@ import json
 
 import pytest
 
-from two_brain_audit import AuditEngine, Dimension, Tier
-from two_brain_audit.exporters import export_csv, export_json, export_markdown
+from scorerift import AuditEngine, Dimension, Tier
+from scorerift.exporters import export_csv, export_json, export_markdown
 
 
 @pytest.fixture
@@ -54,7 +54,7 @@ class TestMarkdownExporter:
         output = export_markdown(engine)
         assert "| Dimension |" in output
         assert "test_dim" in output
-        assert "two-brain-audit" in output
+        assert "scorerift" in output
 
     def test_writes_to_file(self, engine, tmp_path):
         path = tmp_path / "report.md"

@@ -2,9 +2,9 @@
 
 ## Design Philosophy
 
-The two-brain audit system is built on one core insight: **neither automated scoring nor manual review alone is sufficient**. Automated checks catch drift, regressions, and known-bad patterns with high reliability but can't assess "feel" or strategic fit. Manual reviews catch what code can't express, but are subject to optimism bias, staleness, and inconsistency.
+The ScoreRift system is built on one core insight: **neither automated scoring nor manual review alone is sufficient**. Automated checks catch drift, regressions, and known-bad patterns with high reliability but can't assess "feel" or strategic fit. Manual reviews catch what code can't express, but are subject to optimism bias, staleness, and inconsistency.
 
-The two-brain pattern combines both and adds **reconciliation with teeth**: when the brains disagree, the system surfaces that disagreement rather than silently choosing a winner.
+The dual-brain pattern combines both and adds **reconciliation with teeth**: when the brains disagree, the system surfaces that disagreement rather than silently choosing a winner.
 
 ## Architecture Overview
 
@@ -111,7 +111,7 @@ Each integration (GitHub, semgrep, PyPI, Ollama) is:
 - Configured via `configure(**kwargs)` (no global config file)
 - Provides `checks()` that return callables wire-able to dimensions
 
-If you don't install `two-brain-audit[github]`, the GitHub integration simply isn't available. No broken imports, no missing-dep errors at runtime.
+If you don't install `scorerift[github]`, the GitHub integration simply isn't available. No broken imports, no missing-dep errors at runtime.
 
 ## Data Flow
 
@@ -153,8 +153,8 @@ If you don't install `two-brain-audit[github]`, the GitHub integration simply is
 ## File Layout
 
 ```
-two-brain-audit/
-├── src/two_brain_audit/
+scorerift/
+├── src/scorerift/
 │   ├── __init__.py          # Public API exports
 │   ├── engine.py            # AuditEngine, Dimension, DimensionResult
 │   ├── db.py                # SQLite storage (audit_scores, user_feedback)

@@ -1,6 +1,6 @@
 """Tests for tier definitions and scheduling."""
 
-from two_brain_audit.tiers import DEFAULT_SCHEDULES, Schedule, Tier
+from scorerift.tiers import DEFAULT_SCHEDULES, Schedule, Tier
 
 
 class TestTier:

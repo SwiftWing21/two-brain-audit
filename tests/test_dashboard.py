@@ -3,8 +3,8 @@
 
 import pytest
 
-from two_brain_audit import AuditEngine, Dimension, Tier
-from two_brain_audit.dashboard import create_blueprint
+from scorerift import AuditEngine, Dimension, Tier
+from scorerift.dashboard import create_blueprint
 
 
 @pytest.fixture
@@ -133,4 +133,4 @@ class TestDashboardOther:
     def test_index_html(self, client):
         resp = client.get("/audit/")
         assert resp.status_code == 200
-        assert b"Two-Brain" in resp.data
+        assert b"Score" in resp.data

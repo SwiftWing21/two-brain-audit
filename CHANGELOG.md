@@ -6,8 +6,8 @@
 
 - **API key safety**: `__repr__` masks keys, format validation on init, `raw_response` disabled by default
 - **BudgetGuard**: per-session cost cap ($1 default) prevents runaway API spend
-- **CLI persistence**: `register` writes `.two-brain-audit.json`, `run` auto-loads it
-- **Integration exports**: `from two_brain_audit.integrations import GitHubIntegration`
+- **CLI persistence**: `register` writes `.scorerift.json`, `run` auto-loads it
+- **Integration exports**: `from scorerift.integrations import GitHubIntegration`
 - **156 tests** across 14 test modules (was 117 in v0.4.0)
 - **CHANGELOG.md** added
 - **Classifier**: `Development Status :: 5 - Production/Stable`
@@ -19,7 +19,7 @@
 - **Thread safety**: `_chdir_lock` prevents concurrent `run_tier()` CWD races
 - **Atomic sidecar writes**: temp file + `os.replace()` prevents corruption on kill
 - **Broken-check fallback**: 0.0 changed to 0.5 (unknown, not failing) for transient errors
-- **CLI auto-load**: reads preset from `.two-brain-audit.json` before running
+- **CLI auto-load**: reads preset from `.scorerift.json` before running
 - **classify_status()** wired into engine (was orphaned in reconciler)
 - **review_dimension()** return types unified (always dict)
 - **AuditDB.close()** method (engine.close no longer breaks abstraction)
@@ -29,7 +29,7 @@
 
 ## v0.3.1 (2026-04-02)
 
-- **`--target` flag**: `two-brain-audit run light --target /path/to/project`
+- **`--target` flag**: `scorerift run light --target /path/to/project`
 - `AuditEngine(target_path="...")` for Python API
 - `os.chdir` to target before running dimension checks, restore after
 - Found via Gemini Code Assist field test (couldn't point audit at a different directory)
@@ -59,7 +59,7 @@ LLM reviewer system — the "right brain on demand":
 
 Major production hardening (7-phase plan):
 
-- **Package fix**: presets/ and integrations/ moved into `src/two_brain_audit/` (was broken for pip users)
+- **Package fix**: presets/ and integrations/ moved into `src/scorerift/` (was broken for pip users)
 - **All 8 Python preset checks implemented**: dep_freshness, doc_coverage, security, complexity, import_hygiene (was 5/8 stubs)
 - **Security hardening**: input validation on dashboard API, path traversal protection on sidecar, thread-safe DB schema init
 - **Ratchet enforcement**: wired into `run_tier()` via `check_ratchet()` from reconciler

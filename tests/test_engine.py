@@ -3,7 +3,7 @@
 
 import pytest
 
-from two_brain_audit import AuditEngine, Dimension, Tier
+from scorerift import AuditEngine, Dimension, Tier
 
 
 @pytest.fixture

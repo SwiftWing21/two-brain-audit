@@ -1,6 +1,6 @@
 """Tests for feedback helpers."""
 
-from two_brain_audit.feedback import NullClassifier, slider_to_score, star_to_score
+from scorerift.feedback import NullClassifier, slider_to_score, star_to_score
 
 
 class TestStarToScore:
