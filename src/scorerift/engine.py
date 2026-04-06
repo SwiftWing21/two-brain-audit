@@ -67,6 +67,10 @@ class DimensionResult:
     timestamp: str = ""
     ratchet_violation: dict[str, Any] | None = None
     divergence_detail: Divergence | None = None
+    # Ray tracing fields (WS-1: populated by AuditEngine.ray_trace())
+    interaction_delta: float | None = None
+    combined_score: float | None = None
+    ci_95: tuple[float, float] | None = None
 
 
 @dataclass
@@ -392,6 +396,57 @@ class AuditEngine:
                 log.info("Scheduled %s tier triggered", sched.tier.value)
                 return self.run_tier(sched.tier)
         return None
+
+    # ── Ray Tracing (WS-1: cross-dimension interaction scoring) ────
+
+    def ray_trace(
+        self,
+        graph: "InteractionGraph",
+        seed: int = 0,
+    ) -> "RayTraceReport":
+        """Run evidence ray tracing on the latest scores.
+
+        Produces interaction_delta modifiers for each dimension and
+        enriches the latest DimensionResults with combined_score + CI.
+
+        Args:
+            graph: InteractionGraph built via build_graph()
+            seed: Fixed seed for reproducibility (default 0)
+
+        Returns:
+            RayTraceReport with per-dimension results.
+        """
+        from scorerift.ray_trace import ray_trace as _ray_trace, RayTraceReport, InteractionGraph
+
+        scores_dict = {
+            r.name: r.auto_score
+            for r in self.latest_scores()
+        }
+        if not scores_dict:
+            # No scores to trace — return empty report
+            return _ray_trace({}, graph, seed=seed)
+
+        report = _ray_trace(scores_dict, graph, seed=seed)
+
+        # Enrich the cached latest scores with ray trace results
+        for result in self.latest_scores():
+            if result.name in report.results:
+                rt = report.results[result.name]
+                result.interaction_delta = rt.interaction_delta
+                result.combined_score = rt.combined_score
+                result.ci_95 = rt.ci_95
+
+        return report
+
+    def connection_score(self, graph: "InteractionGraph", seed: int = 0) -> float:
+        """Overall score using connection-scope (ray-trace adjusted).
+
+        Like overall_score() but uses combined_score instead of auto_score.
+        """
+        report = self.ray_trace(graph, seed=seed)
+        if not report.results:
+            return 0.0
+        return report.connection_overall
 
     # ── Tension Map ──────────────────────────────────────────────────
 

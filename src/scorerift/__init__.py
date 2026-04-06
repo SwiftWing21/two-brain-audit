@@ -13,6 +13,15 @@ from scorerift.claims import (
 )
 from scorerift.engine import AuditEngine, Dimension, DimensionResult
 from scorerift.grades import GRADE_TO_SCORE, grade_to_score, score_to_grade
+from scorerift.ray_trace import (
+    EvidenceRay,
+    Interaction,
+    InteractionGraph,
+    RayTraceReport,
+    RayTraceResult,
+    build_graph,
+    ray_trace,
+)
 from scorerift.tiers import Tier
 
 # Library best practice: NullHandler so users configure their own logging
@@ -33,6 +42,14 @@ __all__ = [
     "grade_to_score",
     "score_to_grade",
     "tension_report",
+    # Ray tracing (WS-1)
+    "build_graph",
+    "ray_trace",
+    "EvidenceRay",
+    "Interaction",
+    "InteractionGraph",
+    "RayTraceReport",
+    "RayTraceResult",
 ]
 
 __version__ = "2.0.0"
