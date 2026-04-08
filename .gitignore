@@ -37,6 +37,9 @@ demo_baseline.json
 # Snapshots
 audit-snapshots/
 
+# Planning / internal docs
+docs/superpowers/
+
 # OS
 .DS_Store
 Thumbs.db

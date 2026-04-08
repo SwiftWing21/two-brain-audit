@@ -7,7 +7,7 @@ name = "scorerift"
 version = "2.0.0"
 description = "Dual-layer scoring framework combining automated checks (left brain) with manual qualitative grading (right brain) and reconciliation."
 readme = "README.md"
-license = "MIT"
+license = "Apache-2.0"
 requires-python = ">=3.10"
 authors = [
     { name = "Max" },
@@ -16,7 +16,7 @@ keywords = ["scoring", "quality", "reconciliation", "grading", "framework"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
